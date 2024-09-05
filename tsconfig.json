@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "useDefineForClassFields": true, // 
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true, // 跳过类型检查
+    /* bundler */
+    "moduleResolution": "Bundler", // 模块解析策略
+    "allowImportingTsExtensions": true, // 允许导入 ts 文件
+    "resolveJsonModule": true, // 允许解析 json 模块
+    "isolatedModules": true, // 单独的文件中引入其他文件
+    "noEmit": true, // 不生成文件
+    "jsx": "react-jsx",
+    /* linting */
+    "strict": true, // 严格类型校验
+    "noUnusedLocals": true, // 检查未使用的局部变量
+    "noUnusedParameters": true, // 检查未使用的参数
+    "noFallthroughCasesInSwitch": true, // 检查 switch 语句中没有 fallthrough 的情况
+    "declaration": true, // 生成声明文件
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/**/__docs__",
+    "src/**/__tests__"
+  ]
+}

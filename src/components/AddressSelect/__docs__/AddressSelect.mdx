@@ -1,0 +1,32 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Example from "./Example.tsx";
+import * as AddressSelect from "./AddressSelect.stories.tsx";
+
+<Meta of={AddressSelect} title="AddressSelect" />
+
+# AddressSelect
+AddressSelect component with different props.
+
+#### Example
+
+<Canvas of={AddressSelect.Primary} />
+
+## Usage
+
+```ts
+import {AddressSelect} from "sld-ui";
+
+const Example = () => {
+  const onChange = (value) => {
+    console.log(value, 'value')
+  }
+  return (
+      <AddressSelect
+        value={[{label: '1', value: '123'}]}
+        onChange={onChange}
+      />
+  );
+};
+
+export default Example;
+```

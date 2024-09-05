@@ -1,0 +1,9 @@
+/node_modules/*
+/dist/*
+/.storybook/*
+
+setupTests.ts
+
+#storybook build directory
+storybook-static
+*storybook.log
