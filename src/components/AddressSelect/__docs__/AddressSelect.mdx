@@ -17,14 +17,9 @@ AddressSelect component with different props.
 import {AddressSelect} from "sld-ui";
 
 const Example = () => {
-  const onChange = (value) => {
-    console.log(value, 'value')
-  }
+
   return (
-      <AddressSelect
-        value={[{label: '1', value: '123'}]}
-        onChange={onChange}
-      />
+      <AddressSelect />
   );
 };
 

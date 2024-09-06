@@ -1,7 +1,9 @@
 import React, { FC } from "react";
-import AddressSelect, { AddressSelectProps } from "../AddressSelect";
+import { Form } from "antd";
+import AddressSelect from "../AddressSelect";
 
-const Example: FC<AddressSelectProps> = ({ value, onChange }) => {
+const Example: FC = () => {
+  const [form] = Form.useForm();
   return (
     <div
       style={{
@@ -11,7 +13,16 @@ const Example: FC<AddressSelectProps> = ({ value, onChange }) => {
         height: "100%",
       }}
     >
-      <AddressSelect value={value} onChange={onChange} />
+      <Form form={form}>
+        <Form.Item label="省市区" name="address">
+          <AddressSelect />
+        </Form.Item>
+        <Form.Item>
+          <button onClick={() => console.log(form.getFieldsValue())}>
+            提交
+          </button>
+        </Form.Item>
+      </Form>
     </div>
   );
 };
