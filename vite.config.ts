@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
+import react from "@vitejs/plugin-react";
 import path from "path";
 import { peerDependencies } from "./package.json";
 
@@ -18,9 +19,15 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [...Object.keys(peerDependencies)],
+      output: {
+        globals: {
+          react: "React",
+          "react-dom": "ReactDOM",
+        },
+      },
     },
     sourcemap: true,
     emptyOutDir: true,
   },
-  plugins: [dts()], // 生成.d.ts文件
+  plugins: [react(), dts()], // 生成.d.ts文件
 });

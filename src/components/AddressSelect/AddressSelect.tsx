@@ -1,6 +1,6 @@
-import { FormItemProps, Select, Space } from "antd";
-import type { DefaultOptionType } from "antd/es/select";
-import { json } from "./district.json";
+import { Select, Space } from "antd";
+import type { DefaultOptionType, SelectProps } from "antd/es/select";
+import districtData from "./district.json";
 import { useRef, useState } from "react";
 import MUNICIPALITIES from "../../constants/index";
 
@@ -9,13 +9,13 @@ type Result = {
   city?: DefaultOptionType | undefined;
   district?: DefaultOptionType | undefined;
 };
-export interface AddressSelectProps extends FormItemProps {
+export interface AddressSelectProps extends SelectProps {
   value?: Result;
   onChange?: (value: Result) => void;
   width?: number;
 }
 
-const [provinces, cities, districts] = json;
+const [provinces, cities, districts] = districtData.json;
 
 const AddressSelect = (props: AddressSelectProps) => {
   const [result, setResult] = useState<Result>(); // 最终选中的地址
