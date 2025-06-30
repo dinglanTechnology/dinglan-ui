@@ -14,5 +14,16 @@ export const Primary: Story = {
     page: 1,
     size: 10,
     total: 191,
+    isShowTotal: true,
+  },
+};
+
+export const CustomShowTotal: Story = {
+  args: {
+    page: 1,
+    size: 10,
+    total: 115,
+    isShowTotal: true,
+    showTotal: (total) => `${total} Totals`,
   },
 };

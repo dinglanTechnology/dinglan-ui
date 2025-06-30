@@ -6,6 +6,7 @@ export interface PaginationParams extends PaginationProps {
   size: number;
   total: number;
   onChangePage: (page: number, size: number) => void;
+  isShowTotal?: boolean;
 }
 
 const pagination = ({
@@ -15,6 +16,9 @@ const pagination = ({
   align = "end",
   onChangePage,
   showQuickJumper,
+  isShowTotal = true,
+  showTotal = (total) =>
+    `共有${total}条记录 第${page}/${Math.ceil(total! / size)}页`,
   ...restProps
 }: PaginationParams) => {
   return (
@@ -24,9 +28,7 @@ const pagination = ({
       total={total}
       align={align}
       current={page}
-      showTotal={(total) =>
-        `共有${total}条记录 第${page}/${Math.ceil(total! / size)}页`
-      }
+      showTotal={isShowTotal ? showTotal : undefined}
       showQuickJumper={showQuickJumper}
     />
   );

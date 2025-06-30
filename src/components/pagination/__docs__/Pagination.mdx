@@ -23,12 +23,16 @@ const Example = () => {
     setCurrent(page);
     console.log(size);
   };
+  const showTotal = (total) =>
+    `共有${total}条记录 第${page}/${Math.ceil(total! / size)}页`
+
   return (
       <Pagination
         size={size}
         page={current}
         total={total}
         onChangePage={onChange}
+        showTotal={showTotal}
       />
   );
 };
