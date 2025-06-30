@@ -1,0 +1,37 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Example from "./Example.tsx";
+import * as Pagination from "./Pagination.stories.tsx";
+
+<Meta of={Pagination} title="Pagination" />
+
+# Pagination
+
+Pagination component with different props.
+
+#### Example
+
+<Canvas of={Pagination.Primary} />
+
+## Usage
+
+```ts
+import {Pagination} from "sld-ui";
+
+const Example = () => {
+  const [current, setCurrent] = useState(page);
+  const onChange = (page: number, size: number) => {
+    setCurrent(page);
+    console.log(size);
+  };
+  return (
+      <Pagination
+        size={size}
+        page={current}
+        total={total}
+        onChangePage={onChange}
+      />
+  );
+};
+
+export default Example;
+```
