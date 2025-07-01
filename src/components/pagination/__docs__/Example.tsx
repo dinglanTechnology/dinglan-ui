@@ -5,13 +5,13 @@ const Example: FC<PaginationParams> = ({
   page = 1,
   size = 10,
   total = 191,
-  isShowTotal = true,
-  showTotal = undefined,
+  showTotalInfo = false,
 }) => {
   const [current, setCurrent] = useState(page);
+  const [pageSize, setPageSize] = useState(size);
   const onChange = (page: number, size: number) => {
     setCurrent(page);
-    console.log(size);
+    setPageSize(size);
   };
 
   return (
@@ -24,12 +24,11 @@ const Example: FC<PaginationParams> = ({
       }}
     >
       <Pagination
-        size={size}
+        size={pageSize}
         page={current}
         total={total}
         onChangePage={onChange}
-        isShowTotal={isShowTotal}
-        showTotal={showTotal}
+        showTotalInfo={showTotalInfo}
       />
     </div>
   );

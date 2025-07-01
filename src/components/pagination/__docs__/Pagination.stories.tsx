@@ -14,7 +14,7 @@ export const Primary: Story = {
     page: 1,
     size: 10,
     total: 191,
-    isShowTotal: true,
+    showTotalInfo: true,
   },
 };
 
@@ -23,7 +23,6 @@ export const CustomShowTotal: Story = {
     page: 1,
     size: 10,
     total: 115,
-    isShowTotal: true,
-    showTotal: (total) => `${total} Totals`,
+    showTotalInfo: (total) => `${total} Totals`,
   },
 };
