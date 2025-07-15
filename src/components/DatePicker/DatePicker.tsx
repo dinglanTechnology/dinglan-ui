@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   ConfigProvider,
   DatePicker,
@@ -7,6 +7,7 @@ import {
   TimePickerProps,
 } from "antd";
 import { RangePickerProps } from "antd/es/date-picker";
+import type { Locale } from "antd/es/locale";
 
 import dayjs, { Dayjs } from "dayjs";
 import "dayjs/locale/zh-cn";
@@ -25,6 +26,7 @@ type RangePickerRestProps = Omit<RangePickerProps, "value" | "onChange">;
 type TSmartPickerProps = {
   pickerType?: "date" | "dateRange" | "time" | "timeRange";
   valueRange?: boolean;
+  locale?: Locale;
 
   value?: string | (string | null)[] | null;
   onChange?: (value: string | (string | null)[] | null) => void;
@@ -37,83 +39,80 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
   const {
     pickerType = "date",
     valueRange,
+    locale = zhCN,
 
     value,
     onChange,
     ...restProps
   } = props;
 
-  const parseValue = (
-    val: string | (string | null)[] | undefined | null,
-  ): Dayjs | null | NoUndefinedRangeValueType<Dayjs> => {
+  const parsedValue = useMemo(() => {
     if (pickerType === "date" || pickerType === "time") {
-      if (!val) return null;
-      if (Array.isArray(val)) {
-        const isValid = val.every((v) => v && typeof v === "string");
-        if (!isValid) {
-          throw new Error("无效的value值");
-        }
-        return dayjs(val[1]);
+      if (!value) return null;
+      if (Array.isArray(value)) {
+        // 对于单个日期/时间选择器，取最后一个有效值（因为可能到当天任何一个时刻，默认末尾）
+        const lastValidValue = value
+          .filter((v) => v && typeof v === "string")
+          .pop();
+        return lastValidValue ? dayjs(lastValidValue) : null;
       }
-      return dayjs(val);
+      return dayjs(value);
     } else {
-      if (!val) return [null, null];
-      return Array.isArray(val)
-        ? (val.map((v) =>
-            v ? dayjs(v) : null,
-          ) as NoUndefinedRangeValueType<Dayjs>)
-        : [null, null];
-    }
-  };
-
-  const handleChange = (
-    dates: Dayjs | NoUndefinedRangeValueType<Dayjs> | null,
-  ) => {
-    if (!onChange) return;
-
-    // 处理单个日期/时间
-    if (pickerType === "date" || pickerType === "time") {
-      const singleDate = dates as Dayjs | null;
-      let isoValue = null;
-      if (!singleDate) {
-        isoValue = null;
-      } else {
-        isoValue = valueRange
-          ? [
-              singleDate.startOf("day").toISOString(),
-              (restProps as DatePickerRestProps).showTime ||
-              pickerType === "time"
-                ? singleDate.toISOString()
-                : singleDate.endOf("day").toISOString(),
-            ]
-          : singleDate.toISOString();
+      if (!Array.isArray(value)) {
+        throw new Error("value值必须为数组");
       }
-      onChange(isoValue);
+      return (value as (string | null)[]).map((v) =>
+        v ? dayjs(v) : null,
+      ) as NoUndefinedRangeValueType<Dayjs>;
     }
-    // 处理日期/时间范围
-    else {
-      const dateRange = dates as NoUndefinedRangeValueType<Dayjs> | null;
-      let isoValue: (string | null)[] | null = null;
-      if (!dateRange) {
-        isoValue = null;
-      } else {
-        isoValue =
-          (restProps as RangePickerRestProps).showTime ||
-          pickerType === "timeRange"
+  }, [pickerType, value]);
+
+  const handleChange = useCallback(
+    (dates: Dayjs | NoUndefinedRangeValueType<Dayjs> | null) => {
+      if (!onChange) return;
+
+      // 处理单个日期/时间
+      if (pickerType === "date" || pickerType === "time") {
+        const singleDate = dates as Dayjs | null;
+        let isoValue = null;
+        if (!singleDate) {
+          isoValue = null;
+        } else {
+          isoValue = valueRange
             ? [
-                dateRange[0]?.toISOString() || null,
-                dateRange[1]?.toISOString() || null,
+                singleDate.startOf("day").toISOString(),
+                (restProps as DatePickerRestProps).showTime ||
+                pickerType === "time"
+                  ? singleDate.toISOString()
+                  : singleDate.endOf("day").toISOString(),
               ]
-            : [
-                dateRange[0]?.startOf("day").toISOString() || null,
-                dateRange[1]?.endOf("day").toISOString() || null,
-              ];
+            : singleDate.toISOString();
+        }
+        onChange(isoValue);
+      } else {
+        // 处理日期/时间范围
+        const dateRange = dates as NoUndefinedRangeValueType<Dayjs> | null;
+        let isoValue: (string | null)[] | null = null;
+        if (!dateRange) {
+          isoValue = null;
+        } else {
+          isoValue =
+            (restProps as RangePickerRestProps).showTime ||
+            pickerType === "timeRange"
+              ? [
+                  dateRange[0]?.toISOString() || null,
+                  dateRange[1]?.toISOString() || null,
+                ]
+              : [
+                  dateRange[0]?.startOf("day").toISOString() || null,
+                  dateRange[1]?.endOf("day").toISOString() || null,
+                ];
+        }
+        onChange(isoValue);
       }
-      onChange(isoValue);
-    }
-  };
-
-  const parsedValue = parseValue(value);
+    },
+    [onChange, pickerType, valueRange, restProps],
+  );
 
   let pickerComponent = null;
   switch (pickerType) {
@@ -154,11 +153,10 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
       );
       break;
     default:
-      pickerComponent = null;
-      throw new Error("无效的pickerType值");
+      throw new Error("pickerType值类型错误");
   }
 
-  return <ConfigProvider locale={zhCN}>{pickerComponent}</ConfigProvider>;
+  return <ConfigProvider locale={locale}>{pickerComponent}</ConfigProvider>;
 };
 
 export default SmartPicker;
