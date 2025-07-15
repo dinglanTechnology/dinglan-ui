@@ -47,6 +47,13 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
   } = props;
 
   const parsedValue = useMemo(() => {
+    // 辅助函数：验证并解析日期字符串
+    const parseDateString = (dateStr: string | null): Dayjs | null => {
+      if (!dateStr || typeof dateStr !== "string") return null;
+      const parsed = dayjs(dateStr);
+      return parsed.isValid() ? parsed : null;
+    };
+
     if (pickerType === "date" || pickerType === "time") {
       if (!value) return null;
       if (Array.isArray(value)) {
@@ -54,15 +61,17 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
         const lastValidValue = value
           .filter((v) => v && typeof v === "string")
           .pop();
-        return lastValidValue ? dayjs(lastValidValue) : null;
+        return parseDateString(lastValidValue || null);
       }
-      return dayjs(value);
+      return parseDateString(value);
     } else {
+      // 修复：允许value为null或undefined，与单个选择器保持一致
+      if (!value) return [null, null] as NoUndefinedRangeValueType<Dayjs>;
       if (!Array.isArray(value)) {
         throw new Error("value值必须为数组");
       }
       return (value as (string | null)[]).map((v) =>
-        v ? dayjs(v) : null,
+        parseDateString(v),
       ) as NoUndefinedRangeValueType<Dayjs>;
     }
   }, [pickerType, value]);
@@ -153,6 +162,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
       );
       break;
     default:
+      pickerComponent = null;
       throw new Error("pickerType值类型错误");
   }
 
