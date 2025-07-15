@@ -1,0 +1,28 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Example from "./Example.tsx";
+import * as DatePicker from "./DatePicker.stories.tsx";
+
+<Meta of={DatePicker} title="DatePicker" />
+
+# DatePicker
+
+DatePicker component with different props.
+
+#### Example
+
+<Canvas of={DatePicker.Primary} />
+
+## Usage
+
+```ts
+import {DatePicker} from "sld-ui";
+
+const Example = () => {
+
+  return (
+      <DatePicker />
+  );
+};
+
+export default Example;
+```
