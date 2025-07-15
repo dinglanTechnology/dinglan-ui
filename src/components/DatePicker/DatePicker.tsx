@@ -26,8 +26,8 @@ type TSmartPickerProps = {
   pickerType?: "date" | "dateRange" | "time" | "timeRange";
   valueRange?: boolean;
 
-  value?: string | string[];
-  onChange?: (value: string | string[] | null) => void;
+  value?: string | (string | null)[] | null;
+  onChange?: (value: string | (string | null)[] | null) => void;
 } & (DatePickerRestProps | TimePickerRestProps | RangePickerRestProps);
 
 const { RangePicker: DateRangePicker } = DatePicker;
@@ -44,7 +44,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
   } = props;
 
   const parseValue = (
-    val: string | string[] | undefined | null,
+    val: string | (string | null)[] | undefined | null,
   ): Dayjs | null | NoUndefinedRangeValueType<Dayjs> => {
     if (pickerType === "date" || pickerType === "time") {
       if (!val) return null;
@@ -87,25 +87,24 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
     // 处理日期/时间范围
     else {
       const dateRange = dates as NoUndefinedRangeValueType<Dayjs> | null;
-      let isoValue: string[] | null = null;
+      let isoValue: (string | null)[] | null = null;
       if (!dateRange) {
-        isoValue = [];
+        isoValue = null;
       } else {
         isoValue =
           (restProps as RangePickerRestProps).showTime ||
           pickerType === "timeRange"
             ? [
-                dateRange[0]?.toISOString() || "",
-                dateRange[1]?.toISOString() || "",
+                dateRange[0]?.toISOString() || null,
+                dateRange[1]?.toISOString() || null,
               ]
             : [
-                dateRange[0]?.startOf("day").toISOString() || "",
-                dateRange[1]?.endOf("day").toISOString() || "",
+                dateRange[0]?.startOf("day").toISOString() || null,
+                dateRange[1]?.endOf("day").toISOString() || null,
               ];
       }
       onChange(isoValue);
     }
-    // console.log(isoValue, "--------isoValue--------------");
   };
 
   const parsedValue = parseValue(value);
