@@ -48,9 +48,12 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
   ): Dayjs | null | NoUndefinedRangeValueType<Dayjs> => {
     if (pickerType === "date" || pickerType === "time") {
       if (!val) return null;
-      // val[1]是结束时间, day为1天末尾，time为当前值
-      const temp = typeof val === "string" ? val : val[1] || val[0];
-      return dayjs(temp);
+      if (Array.isArray(val)) {
+        const validValue = val.find((v) => v && typeof v === "string");
+        if (!validValue) return null;
+        return dayjs(validValue);
+      }
+      return dayjs(val);
     } else {
       if (!val) return [null, null];
       return Array.isArray(val)
