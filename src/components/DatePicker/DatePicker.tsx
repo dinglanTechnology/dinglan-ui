@@ -49,15 +49,17 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
     if (pickerType === "date" || pickerType === "time") {
       if (!val) return null;
       if (Array.isArray(val)) {
-        const validValue = val.find((v) => v && typeof v === "string");
-        if (!validValue) return null;
-        return dayjs(validValue);
+        const isValid = val.every((v) => v && typeof v === "string");
+        if (!isValid) {
+          throw new Error("无效的value值");
+        }
+        return dayjs(val[1]);
       }
       return dayjs(val);
     } else {
       if (!val) return [null, null];
       return Array.isArray(val)
-        ? ((val as string[]).map((v) =>
+        ? (val.map((v) =>
             v ? dayjs(v) : null,
           ) as NoUndefinedRangeValueType<Dayjs>)
         : [null, null];
@@ -79,6 +81,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
         isoValue = valueRange
           ? [
               singleDate.startOf("day").toISOString(),
+              (restProps as DatePickerRestProps).showTime ||
               pickerType === "time"
                 ? singleDate.toISOString()
                 : singleDate.endOf("day").toISOString(),
@@ -152,6 +155,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
       break;
     default:
       pickerComponent = null;
+      throw new Error("无效的pickerType值");
   }
 
   return <ConfigProvider locale={zhCN}>{pickerComponent}</ConfigProvider>;
