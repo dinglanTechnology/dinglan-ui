@@ -43,17 +43,21 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
     ...restProps
   } = props;
 
-  const parseValue = (val: string | string[] | undefined | null) => {
+  const parseValue = (
+    val: string | string[] | undefined | null,
+  ): Dayjs | null | NoUndefinedRangeValueType<Dayjs> => {
     if (pickerType === "date" || pickerType === "time") {
       if (!val) return null;
       // val[1]是结束时间, day为1天末尾，time为当前值
       const temp = typeof val === "string" ? val : val[1] || val[0];
       return dayjs(temp);
     } else {
-      if (!val) return [];
+      if (!val) return [null, null];
       return Array.isArray(val)
-        ? (val as string[]).map((v) => (v ? dayjs(v) : null))
-        : [];
+        ? ((val as string[]).map((v) =>
+            v ? dayjs(v) : null,
+          ) as NoUndefinedRangeValueType<Dayjs>)
+        : [null, null];
     }
   };
 
@@ -64,7 +68,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
 
     // 处理单个日期/时间
     if (pickerType === "date" || pickerType === "time") {
-      const singleDate = dates as Dayjs;
+      const singleDate = dates as Dayjs | null;
       let isoValue = null;
       if (!singleDate) {
         isoValue = null;
@@ -104,13 +108,15 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
     // console.log(isoValue, "--------isoValue--------------");
   };
 
+  const parsedValue = parseValue(value);
+
   let pickerComponent = null;
   switch (pickerType) {
     case "date":
       pickerComponent = (
         <DatePicker
           {...(restProps as DatePickerRestProps)}
-          value={parseValue(value) as Dayjs}
+          value={parsedValue as Dayjs | null}
           onChange={handleChange}
         />
       );
@@ -119,7 +125,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
       pickerComponent = (
         <DateRangePicker
           {...(restProps as RangePickerRestProps)}
-          value={parseValue(value) as [Dayjs, Dayjs]}
+          value={parsedValue as NoUndefinedRangeValueType<Dayjs>}
           onChange={handleChange}
         />
       );
@@ -128,7 +134,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
       pickerComponent = (
         <TimePicker
           {...(restProps as TimePickerRestProps)}
-          value={parseValue(value) as Dayjs}
+          value={parsedValue as Dayjs | null}
           onChange={handleChange}
         />
       );
@@ -137,7 +143,7 @@ const SmartPicker: React.FC<TSmartPickerProps> = (props) => {
       pickerComponent = (
         <TimeRangePicker
           {...(restProps as RangePickerRestProps)}
-          value={parseValue(value) as [Dayjs, Dayjs]}
+          value={parsedValue as NoUndefinedRangeValueType<Dayjs>}
           onChange={handleChange}
         />
       );

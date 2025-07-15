@@ -12,10 +12,12 @@ type Story = StoryObj<typeof Example>;
 export const Primary: Story = {
   argTypes: {
     pickerType: {
-      control: { type: "select" },
+      control: {
+        type: "select",
+        description: "选择日期组件类型",
+      },
       options: ["date", "dateRange", "time", "timeRange"],
-      description: "选择日期组件类型",
-      defaultValue: "dateRange",
+      defaultValue: "date",
     },
     valueRange: {
       control: { type: "select" },
@@ -27,7 +29,6 @@ export const Primary: Story = {
     },
   },
   args: {
-    pickerType: "",
     valueRange: false,
     showTime: false,
   },
