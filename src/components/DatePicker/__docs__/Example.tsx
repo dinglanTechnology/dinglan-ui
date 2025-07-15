@@ -2,13 +2,8 @@ import React, { FC } from "react";
 import { Form } from "antd";
 import DatePicker from "../DatePicker";
 
-// import dayjs from "dayjs";
-
-const Example: FC = () => {
+const Example: FC = (props) => {
   const [form] = Form.useForm();
-  // form.setFieldsValue({
-  //   date: "2015-01-01",
-  // });
 
   return (
     <div
@@ -21,10 +16,7 @@ const Example: FC = () => {
     >
       <Form form={form}>
         <Form.Item label="日期选择" name="date">
-          <DatePicker
-          // valueRange
-          // pickerType="time"
-          />
+          <DatePicker {...props} />
         </Form.Item>
         <Form.Item>
           <button onClick={() => console.log(form.getFieldsValue())}>

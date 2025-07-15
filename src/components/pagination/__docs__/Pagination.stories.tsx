@@ -20,7 +20,7 @@ export const Primary: Story = {
 
 export const CustomShowTotal: Story = {
   args: {
-    page: 1,
+    page: 3,
     size: 10,
     total: 115,
     showTotalInfo: (total) => `${total} Totals`,
