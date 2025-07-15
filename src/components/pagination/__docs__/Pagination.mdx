@@ -1,0 +1,50 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Example from "./Example.tsx";
+import * as Pagination from "./Pagination.stories.tsx";
+
+<Meta of={Pagination} title="Pagination" />
+
+# Pagination
+
+Pagination component with different props.
+
+#### Example
+
+<Canvas of={Pagination.Primary} />
+
+## Usage
+
+```ts
+import {Pagination} from "sld-ui";
+
+const Example = () => {
+  const [current, setCurrent] = useState(page);
+  const [pageSize, setPageSize] = useState(size);
+  const onChange = (page: number, size: number) => {
+    setCurrent(page);
+    setPageSize(size);
+  };
+  const showTotalInfo = (total) =>
+    `共有${total}条记录 第${page}/${Math.ceil(total! / pageSize)}页`
+
+  return (
+      <Pagination
+        size={pageSize}
+        page={current}
+        total={total}
+        onChangePage={onChange}
+        showTotalInfo={showTotalInfo}
+      />
+  );
+};
+
+export default Example;
+```
+
+#### Arguments
+
+- **page** _`number`_ - 当前页码，表示用户正在查看的页数。
+- **size** _`number`_ - 每页显示的记录数，决定了分页的总页数。
+- **total** _`number`_ - 总记录数，表示所有数据的数量。
+- **onChangePage** _`(page: number, size: number) => void`_ - 当页码或每页记录数改变时调用的回调函数，接收新的页码和每页记录数作为参数。
+- **showTotalInfo** _`(total: number) => React.ReactNode | boolean`_ - 一个可选的函数，用于自定义显示总记录信息的内容，接收总记录数并返回一个 React 节点或布尔值，指示是否显示该信息。
