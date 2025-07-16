@@ -1,10 +1,10 @@
 import { InputNumber, InputNumberProps } from "antd";
 
-type ISmartInputNumberProps = InputNumberProps & {
+type TDlInputNumberProps = InputNumberProps & {
   useType?: "money";
 };
 
-export default function SmartInputNumber(props: ISmartInputNumberProps) {
+export default function DlInputNumber(props: TDlInputNumberProps) {
   const { useType, value, onChange, formatter, parser, ...restProps } = props;
 
   const moneyFormatter = (value: number | string | undefined) => {

@@ -10,6 +10,14 @@ export default meta;
 type Story = StoryObj<typeof Example>;
 
 export const Primary: Story = {
-  argTypes: {},
-  args: {},
+  argTypes: {
+    useType: {
+      control: { type: "select" },
+      options: ["", "money"],
+      defaultValue: "money",
+    },
+  },
+  args: {
+    useType: "money",
+  },
 };

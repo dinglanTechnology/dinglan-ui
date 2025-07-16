@@ -16,7 +16,7 @@ const Example: FC = (props) => {
     >
       <Form form={form}>
         <Form.Item label="数字输入" name="date">
-          <InputNumber useType="money" {...props} />
+          <InputNumber {...props} />
         </Form.Item>
         <Form.Item>
           <button onClick={() => console.log(form.getFieldsValue())}>
