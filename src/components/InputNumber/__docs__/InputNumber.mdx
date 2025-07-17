@@ -1,0 +1,34 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Example from "./Example.tsx";
+import * as InputNumber from "./InputNumber.stories.tsx";
+
+<Meta of={InputNumber} title="InputNumber" />
+
+# InputNumber
+
+InputNumber component with different props.
+
+#### Example
+
+<Canvas of={InputNumber.Primary} />
+
+## Usage
+
+```ts
+import {InputNumber} from "sld-ui";
+
+const Example = () => {
+
+  return (
+      <InputNumber />
+  );
+};
+
+export default Example;
+```
+
+#### Arguments
+
+- **useType** _`string`_ - 类型：money金钱
+- **其他参数** _`any`_ -看antd InputNumber文档
+- **from 25.7.16**
