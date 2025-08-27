@@ -1,6 +1,6 @@
 {
   "name": "dinglan-ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "format": "prettier --write --parse typescript '**/*.{ts,tsx}'",
     "lint": "eslint . --ext .ts,.tsx --ignore-path .gitignore --fix",
