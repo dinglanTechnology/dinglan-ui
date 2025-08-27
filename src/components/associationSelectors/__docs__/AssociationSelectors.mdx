@@ -1,0 +1,152 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Example from "./Example.tsx";
+import * as AssociationSelectors from "./AssociationSelectors.stories.tsx";
+
+<Meta of={AssociationSelectors} title="AssociationSelectors" />
+
+# AssociationSelectors
+
+关联选择器组件，基于 Ant Design Select 组件封装，主要用于处理有依赖关系的下拉选择场景。支持异步数据获取、级联选择、初始值保持等功能。
+
+#### Example
+
+<Canvas of={AssociationSelectors.Primary} />
+
+## Usage
+
+```ts
+import { AssociationSelectors } from "dinglan-ui";
+import { Form } from "antd";
+
+// 基础选项类型
+type OptionItem = {
+  name: string;
+  code: string | number | boolean;
+};
+
+const Example = () => {
+  const [form] = Form.useForm();
+  
+  // 获取项目选项（无依赖）
+  const getProjectOptions = async (): Promise<OptionItem[]> => {
+    return [
+      { name: "鹿溪源", code: "鹿溪源" },
+      { name: "龙栖海岸", code: "龙栖海岸" },
+    ];
+  };
+
+  // 获取期数选项（依赖项目）
+  const getProjectPhaseOptions = async (
+    projectId?: string | number | boolean
+  ): Promise<OptionItem[]> => {
+    return [
+      { name: `${projectId}1期`, code: `${projectId}1期` },
+      { name: `${projectId}2期`, code: `${projectId}2期` },
+    ];
+  };
+
+  return (
+    <Form 
+      form={form}
+      initialValues={{
+        projectId: "鹿溪源",
+        projectPhaseId: "鹿溪源1期",
+      }}
+    >
+      {/* 无依赖的选择器 */}
+      <Form.Item label="项目" name="projectId">
+        <AssociationSelectors
+          form={form}
+          name="projectId"
+          getOptions={getProjectOptions}
+          allowClear={true}
+          placeholder="请选择项目"
+        />
+      </Form.Item>
+      
+      {/* 有依赖的选择器 */}
+      <Form.Item label="期数" name="projectPhaseId">
+        <AssociationSelectors
+          dependencies="projectId"
+          form={form}
+          name="projectPhaseId"
+          getOptions={getProjectPhaseOptions}
+          allowClear={true}
+          suffixIcon={<div>期</div>}
+        />
+      </Form.Item>
+    </Form>
+  );
+};
+
+export default Example;
+```
+
+## API
+
+#### 必需参数
+
+- **form** _`FormInstance`_ - Ant Design Form 实例，用于表单字段管理和值监听。
+- **name** _`string`_ - 表单字段名称，对应 Form.Item 的 name 属性。
+- **getOptions** _`(value?: string | number | boolean) => Promise<OptionItem[]>`_ - 异步获取选项数据的函数。
+  - 无依赖时：不需要参数 `() => Promise<OptionItem[]>`
+  - 有依赖时：接收依赖字段的值作为参数
+
+#### 可选参数
+
+- **dependencies** _`string | number | boolean | undefined | null`_ - 依赖的字段名称，当该字段值变化时会重新获取选项。
+- **allowClear** _`boolean`_ - 是否显示清除按钮，允许清空选择。
+- **placeholder** _`string`_ - 输入框占位文本。
+- **suffixIcon** _`React.ReactNode`_ - 自定义的选择框后缀图标。
+- **disabled** _`boolean`_ - 是否禁用选择器。
+- **loading** _`boolean`_ - 是否显示加载状态。
+- **mode** _`"multiple" | "tags"`_ - 选择模式，支持多选。
+
+#### 选项数据格式
+
+```typescript
+type OptionItem = {
+  name: string;                    // 显示文本
+  code: string | number | boolean; // 选项值
+};
+```
+
+## 核心特性
+
+### 🔄 异步数据获取
+- 基于 ahooks `useRequest` 实现异步数据获取
+- 支持手动触发和自动重新请求
+- 内置加载状态和错误处理
+
+### 🔗 级联选择支持
+- 支持多级依赖关系（项目 → 期数 → 批次）
+- 依赖值变化时自动清空下级选项
+- 支持数组类型的依赖值（自动转换为逗号分隔字符串）
+
+### 💾 初始值保持
+- 支持 Form `initialValues` 的初始值设置
+- 首次加载时保持初始值不被清空
+- 智能判断是否为首次加载，避免误清空
+
+### ⚡ 性能优化
+- 使用 `useUpdateEffect` 避免首次渲染时的不必要请求
+- 使用 `Form.useWatch` 精确监听字段变化
+- 支持选项数据的手动更新（mutate）
+
+### 🎨 完全兼容
+- 继承 Ant Design Select 的所有属性
+- 完全兼容 Form 表单验证
+- 支持所有 Select 的样式定制
+
+## 使用场景
+
+1. **地区选择**：省份 → 城市 → 区县
+2. **项目管理**：项目 → 期数 → 批次
+3. **分类选择**：一级分类 → 二级分类 → 三级分类
+4. **组织架构**：部门 → 小组 → 成员
+
+## 注意事项
+
+- 确保 `getOptions` 函数返回正确的 Promise 类型
+- 依赖字段变化时，当前字段值会被清空（除首次加载外）
+- 支持数组类型的依赖值，会自动转换为字符串传递给 `getOptions`
