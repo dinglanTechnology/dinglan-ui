@@ -44,4 +44,6 @@ const pagination = ({
   );
 };
 
+pagination.displayName = "DinglanUI.Pagination";
+
 export default pagination;
