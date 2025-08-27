@@ -23,11 +23,15 @@ const Example = () => {
   const getProjectPhaseOptions = async (
     value?: string | number | boolean,
   ): Promise<OptionItem[]> => {
-    return [
-      { name: `${value}1期`, code: `${value}1期` },
-      { name: `${value}2期`, code: `${value}2期` },
-      { name: `${value}3期`, code: `${value}3期` },
-    ];
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { name: `${value}1期`, code: `${value}1期` },
+          { name: `${value}2期`, code: `${value}2期` },
+          { name: `${value}3期`, code: `${value}3期` },
+        ]);
+      }, 3000);
+    });
   };
   // 模拟批次接口请求
   const getProjectBatchOptions = async (
@@ -102,6 +106,7 @@ const Example = () => {
             name={"projectBatchId"}
             allowClear={true}
             suffixIcon={<div>批次</div>}
+            waitTime={0}
             getOptions={getProjectBatchOptions}
           />
         </Form.Item>
