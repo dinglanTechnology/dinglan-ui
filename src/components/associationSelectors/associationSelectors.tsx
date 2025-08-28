@@ -33,8 +33,6 @@ const AssociationSelectors = ({
 }: AssociationSelectorsParams) => {
   // 依赖值
   const dependenciesVal = Form.useWatch(dependencies, form);
-  // 当前字段值
-  const currentValue = Form.useWatch(name, form);
   // 是否是首次加载
   const [isFirstLoad, { setFalse }] = useBoolean(true);
 
@@ -76,8 +74,8 @@ const AssociationSelectors = ({
 
       // 存在上级依赖且上级依赖值不为空
       if (!!dependencies && dependenciesVal) {
-        // 如果当前字段有初始值，且是首次加载，则不清空
-        if (currentValue && isFirstLoad) {
+        // 如果是首次加载，则不清空
+        if (isFirstLoad) {
           setFalse();
         } else {
           clearFn();
