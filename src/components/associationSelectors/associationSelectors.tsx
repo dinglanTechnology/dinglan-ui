@@ -13,13 +13,14 @@ type OptionItem = {
  * @param form 表单实例
  * @param name 字段名
  * @param getOptions 获取选项的函数
- * @param waitTime 等待时间，默认1000ms
+ * @param waitTime 等待时间，默认0ms
  */
 interface AssociationSelectorsParams extends SelectProps {
   dependencies?: string | undefined;
   form: FormInstance;
   name: string;
-  getOptions: (value?: string | number | boolean) => Promise<OptionItem[]>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOptions: (value?: any) => Promise<OptionItem[]>;
   waitTime?: number;
 }
 
@@ -28,7 +29,7 @@ const AssociationSelectors = ({
   form,
   name,
   getOptions,
-  waitTime = 1000,
+  waitTime = 0,
   ...restProps
 }: AssociationSelectorsParams) => {
   // 依赖值
