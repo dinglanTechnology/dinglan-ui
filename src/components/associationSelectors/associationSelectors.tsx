@@ -9,14 +9,16 @@ type OptionItem = {
 
 /**
  * 关联选择器
- * @param dependencies 依赖值
  * @param form 表单实例
  * @param name 字段名
  * @param getOptions 获取选项的函数
  * @param waitTime 等待时间，默认0ms
+ * @param parentField 父级字段
+ * @param parentParams 父级参数
  */
 interface AssociationSelectorsParams extends SelectProps {
-  dependencies?: string | undefined;
+  parentField?: string;
+  parentParams?: string[];
   form: FormInstance;
   name: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +27,8 @@ interface AssociationSelectorsParams extends SelectProps {
 }
 
 const AssociationSelectors = ({
-  dependencies,
+  parentField,
+  parentParams,
   form,
   name,
   getOptions,
@@ -33,7 +36,7 @@ const AssociationSelectors = ({
   ...restProps
 }: AssociationSelectorsParams) => {
   // 依赖值
-  const dependenciesVal = Form.useWatch(dependencies, form);
+  const dependenciesVal = Form.useWatch(parentField, form);
   // 是否是首次加载
   const [isFirstLoad, { setFalse }] = useBoolean(true);
 
@@ -58,7 +61,7 @@ const AssociationSelectors = ({
   const { run: dependenciesChangeFn } = useDebounceFn(
     () => {
       // 不存在依赖值，直接调用getOptions
-      if (!dependencies) {
+      if (!parentField) {
         return getOptionsList();
       }
 
@@ -67,21 +70,35 @@ const AssociationSelectors = ({
 
       // 存在上级依赖且上级依赖值为空
       if (
-        !!dependencies &&
+        !!parentField &&
         (isArray ? !dependenciesVal.length : !dependenciesVal)
       ) {
         return clearFn();
       }
 
       // 存在上级依赖且上级依赖值不为空
-      if (!!dependencies && dependenciesVal) {
+      if (!!parentField && dependenciesVal) {
         // 如果是首次加载，则不清空
         if (isFirstLoad) {
           setFalse();
         } else {
           clearFn();
         }
-        getOptionsList(isArray ? dependenciesVal.join(",") : dependenciesVal);
+        // 如果存在父级参数，则将从form中获取父级参数,并且为对象格式，key为父级参数，value为父级依赖值
+        if (parentParams && parentParams.length) {
+          const formParams = form.getFieldsValue(true);
+          const params = parentParams.reduce(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (acc: Record<string, any>, item) => {
+              acc[item] = formParams[item];
+              return acc;
+            },
+            {},
+          );
+          getOptionsList(params);
+        } else {
+          getOptionsList(dependenciesVal);
+        }
       }
     },
     { wait: waitTime },

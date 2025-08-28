@@ -6,7 +6,7 @@ import * as AssociationSelectors from "./AssociationSelectors.stories.tsx";
 
 # AssociationSelectors
 
-关联选择器组件，基于 Ant Design Select 组件封装，主要用于处理有依赖关系的下拉选择场景。支持异步数据获取、级联选择、初始值保持等功能。
+关联选择器组件，基于 Ant Design Select 组件封装，主要用于处理有依赖关系的下拉选择场景。支持异步数据获取、级联选择、防抖优化、多参数传递等功能。
 
 #### Example
 
@@ -37,11 +37,22 @@ const Example = () => {
 
   // 获取期数选项（依赖项目）
   const getProjectPhaseOptions = async (
-    projectId?: string | number | boolean
+    projectId: string | number | boolean
   ): Promise<OptionItem[]> => {
     return [
       { name: `${projectId}1期`, code: `${projectId}1期` },
       { name: `${projectId}2期`, code: `${projectId}2期` },
+    ];
+  };
+
+  // 获取批次选项（依赖多个参数）
+  const getProjectBatchOptions = async (params: {
+    projectId: string;
+    projectPhaseId: string;
+  }): Promise<OptionItem[]> => {
+    return [
+      { name: `${params.projectPhaseId}1批次`, code: "1批次" },
+      { name: `${params.projectPhaseId}2批次`, code: "2批次" },
     ];
   };
 
@@ -51,6 +62,7 @@ const Example = () => {
       initialValues={{
         projectId: "鹿溪源",
         projectPhaseId: "鹿溪源1期",
+        projectBatchId: "1批次",
       }}
     >
       {/* 无依赖的选择器 */}
@@ -64,15 +76,28 @@ const Example = () => {
         />
       </Form.Item>
       
-      {/* 有依赖的选择器 */}
+      {/* 单依赖的选择器 */}
       <Form.Item label="期数" name="projectPhaseId">
         <AssociationSelectors
-          dependencies="projectId"
+          parentField="projectId"
           form={form}
           name="projectPhaseId"
           getOptions={getProjectPhaseOptions}
           allowClear={true}
           suffixIcon={<div>期</div>}
+        />
+      </Form.Item>
+
+      {/* 多依赖的选择器 */}
+      <Form.Item label="批次" name="projectBatchId">
+        <AssociationSelectors
+          parentField="projectPhaseId"
+          parentParams={["projectId", "projectPhaseId"]}
+          form={form}
+          name="projectBatchId"
+          getOptions={getProjectBatchOptions}
+          allowClear={true}
+          suffixIcon={<div>批次</div>}
         />
       </Form.Item>
     </Form>
@@ -88,13 +113,16 @@ export default Example;
 
 - **form** _`FormInstance`_ - Ant Design Form 实例，用于表单字段管理和值监听。
 - **name** _`string`_ - 表单字段名称，对应 Form.Item 的 name 属性。
-- **getOptions** _`(value?: string | number | boolean) => Promise<OptionItem[]>`_ - 异步获取选项数据的函数。
+- **getOptions** _`(value?: any) => Promise<OptionItem[]>`_ - 异步获取选项数据的函数。
   - 无依赖时：不需要参数 `() => Promise<OptionItem[]>`
-  - 有依赖时：接收依赖字段的值作为参数
+  - 单依赖时：接收依赖字段的值作为参数 `(value: any) => Promise<OptionItem[]>`
+  - 多依赖时：接收对象参数 `(params: Record<string, any>) => Promise<OptionItem[]>`
 
 #### 可选参数
 
-- **dependencies** _`string | number | boolean | undefined | null`_ - 依赖的字段名称，当该字段值变化时会重新获取选项。
+- **parentField** _`string`_ - 父级依赖字段名称，当该字段值变化时会重新获取选项。
+- **parentParams** _`string[]`_ - 多个父级参数字段名数组，用于复杂依赖场景。
+- **waitTime** _`number`_ - 防抖等待时间，默认为 0ms。
 - **allowClear** _`boolean`_ - 是否显示清除按钮，允许清空选择。
 - **placeholder** _`string`_ - 输入框占位文本。
 - **suffixIcon** _`React.ReactNode`_ - 自定义的选择框后缀图标。
@@ -118,35 +146,66 @@ type OptionItem = {
 - 支持手动触发和自动重新请求
 - 内置加载状态和错误处理
 
-### 🔗 级联选择支持
-- 支持多级依赖关系（项目 → 期数 → 批次）
-- 依赖值变化时自动清空下级选项
-- 支持数组类型的依赖值（自动转换为逗号分隔字符串）
+### 🔗 灵活的依赖关系
+- **无依赖**：独立的选择器，直接获取所有选项
+- **单依赖**：依赖一个父级字段，传递单个值给 getOptions
+- **多依赖**：依赖多个字段，传递对象参数给 getOptions
+
+### ⚡ 防抖优化
+- 内置防抖功能，避免高频切换时的重复请求
+- 可自定义防抖等待时间（waitTime）
+- 默认为 0ms，可根据需要调整
 
 ### 💾 初始值保持
 - 支持 Form `initialValues` 的初始值设置
 - 首次加载时保持初始值不被清空
 - 智能判断是否为首次加载，避免误清空
 
-### ⚡ 性能优化
-- 使用 `useUpdateEffect` 避免首次渲染时的不必要请求
-- 使用 `Form.useWatch` 精确监听字段变化
-- 支持选项数据的手动更新（mutate）
-
 ### 🎨 完全兼容
 - 继承 Ant Design Select 的所有属性
 - 完全兼容 Form 表单验证
-- 支持所有 Select 的样式定制
+- 默认宽度 100%，支持样式定制
 
 ## 使用场景
 
-1. **地区选择**：省份 → 城市 → 区县
-2. **项目管理**：项目 → 期数 → 批次
-3. **分类选择**：一级分类 → 二级分类 → 三级分类
-4. **组织架构**：部门 → 小组 → 成员
+### 1. **简单级联**（单依赖）
+```typescript
+// 省份 → 城市
+<AssociationSelectors
+  parentField="provinceId"
+  getOptions={(provinceId) => getCities(provinceId)}
+/>
+```
+
+### 2. **复杂级联**（多依赖）
+```typescript
+// 项目 + 期数 → 批次
+<AssociationSelectors
+  parentField="projectPhaseId"
+  parentParams={["projectId", "projectPhaseId"]}
+  getOptions={(params) => getBatches(params.projectId, params.projectPhaseId)}
+/>
+```
+
+### 3. **独立选择器**（无依赖）
+```typescript
+// 独立的分类选择
+<AssociationSelectors
+  getOptions={() => getCategories()}
+/>
+```
+
+## 参数传递规则
+
+| 场景 | parentField | parentParams | getOptions 接收参数 |
+|------|-------------|--------------|-------------------|
+| 无依赖 | 未设置 | - | 无参数 `()` |
+| 单依赖 | 设置 | 未设置 | 单个值 `(value)` |
+| 多依赖 | 设置 | 设置 | 对象参数 `(params)` |
 
 ## 注意事项
 
 - 确保 `getOptions` 函数返回正确的 Promise 类型
 - 依赖字段变化时，当前字段值会被清空（除首次加载外）
-- 支持数组类型的依赖值，会自动转换为字符串传递给 `getOptions`
+- 使用 `parentParams` 时，会从表单中获取所有指定字段的值作为对象传递
+- 防抖功能可以有效减少网络请求，建议根据实际情况调整 `waitTime`

@@ -21,7 +21,7 @@ const Example = () => {
   };
   // 模拟期数接口请求
   const getProjectPhaseOptions = async (
-    value?: string | number | boolean,
+    value: string | number | boolean,
   ): Promise<OptionItem[]> => {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -34,13 +34,23 @@ const Example = () => {
     });
   };
   // 模拟批次接口请求
-  const getProjectBatchOptions = async (
-    value?: string | number | boolean,
-  ): Promise<OptionItem[]> => {
+  const getProjectBatchOptions = async (value: {
+    projectId: string;
+    projectPhaseId: string;
+  }): Promise<OptionItem[]> => {
     return [
-      { name: `${value}1批次`, code: `${value}1批次` },
-      { name: `${value}2批次`, code: `${value}2批次` },
-      { name: `${value}3批次`, code: `${value}3批次` },
+      {
+        name: `${value.projectPhaseId}1批次`,
+        code: `1批次`,
+      },
+      {
+        name: `${value.projectPhaseId}2批次`,
+        code: `2批次`,
+      },
+      {
+        name: `${value.projectPhaseId}3批次`,
+        code: `3批次`,
+      },
     ];
   };
 
@@ -86,7 +96,7 @@ const Example = () => {
           style={{ flex: 1 }}
         >
           <AssociationSelectors
-            dependencies={"projectId"}
+            parentField={"projectId"}
             form={form}
             name={"projectPhaseId"}
             allowClear={true}
@@ -101,7 +111,8 @@ const Example = () => {
           style={{ flex: 1 }}
         >
           <AssociationSelectors
-            dependencies={"projectPhaseId"}
+            parentField={"projectPhaseId"}
+            parentParams={["projectId", "projectPhaseId"]}
             form={form}
             name={"projectBatchId"}
             allowClear={true}
