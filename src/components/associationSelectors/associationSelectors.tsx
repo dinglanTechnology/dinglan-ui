@@ -97,6 +97,7 @@ const AssociationSelectors = ({
       fieldNames={{ label: "name", value: "code" }}
       options={optionsList}
       loading={loading}
+      style={{ width: "100%", ...restProps.style }}
       {...restProps}
     />
   );
