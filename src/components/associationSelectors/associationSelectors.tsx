@@ -11,24 +11,21 @@ type OptionItem = {
  * 关联选择器
  * @param form 表单实例
  * @param name 字段名
- * @param getOptions 获取选项的函数
+ * @param getOptions 获取列表选项的函数，无父级依赖时，参数为空，有父级依赖时，参数为父级依赖值
  * @param waitTime 等待时间，默认0ms
  * @param parentField 父级字段
- * @param parentParams 父级参数
  */
 interface AssociationSelectorsParams extends SelectProps {
   parentField?: string;
-  parentParams?: string[];
   form: FormInstance;
   name: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getOptions: (value?: any) => Promise<OptionItem[]>;
+  getOptions: (params?: any) => Promise<OptionItem[]>;
   waitTime?: number;
 }
 
 const AssociationSelectors = ({
   parentField,
-  parentParams,
   form,
   name,
   getOptions,
@@ -84,21 +81,7 @@ const AssociationSelectors = ({
         } else {
           clearFn();
         }
-        // 如果存在父级参数，则将从form中获取父级参数,并且为对象格式，key为父级参数，value为父级依赖值
-        if (parentParams && parentParams.length) {
-          const formParams = form.getFieldsValue(true);
-          const params = parentParams.reduce(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (acc: Record<string, any>, item) => {
-              acc[item] = formParams[item];
-              return acc;
-            },
-            {},
-          );
-          getOptionsList(params);
-        } else {
-          getOptionsList(dependenciesVal);
-        }
+        getOptionsList(dependenciesVal);
       }
     },
     { wait: waitTime },

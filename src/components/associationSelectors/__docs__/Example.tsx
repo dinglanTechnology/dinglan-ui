@@ -21,34 +21,33 @@ const Example = () => {
   };
   // 模拟期数接口请求
   const getProjectPhaseOptions = async (
-    value: string | number | boolean,
+    projectId: string,
   ): Promise<OptionItem[]> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([
-          { name: `${value}1期`, code: `${value}1期` },
-          { name: `${value}2期`, code: `${value}2期` },
-          { name: `${value}3期`, code: `${value}3期` },
+          { name: `${projectId}1期`, code: `${projectId}1期` },
+          { name: `${projectId}2期`, code: `${projectId}2期` },
+          { name: `${projectId}3期`, code: `${projectId}3期` },
         ]);
       }, 3000);
     });
   };
   // 模拟批次接口请求
-  const getProjectBatchOptions = async (value: {
-    projectId: string;
-    projectPhaseId: string;
-  }): Promise<OptionItem[]> => {
+  const getProjectBatchOptions = async (
+    projectPhaseId: string,
+  ): Promise<OptionItem[]> => {
     return [
       {
-        name: `${value.projectPhaseId}1批次`,
+        name: `${projectPhaseId}1批次`,
         code: `1批次`,
       },
       {
-        name: `${value.projectPhaseId}2批次`,
+        name: `${projectPhaseId}2批次`,
         code: `2批次`,
       },
       {
-        name: `${value.projectPhaseId}3批次`,
+        name: `${projectPhaseId}3批次`,
         code: `3批次`,
       },
     ];
@@ -112,7 +111,6 @@ const Example = () => {
         >
           <AssociationSelectors
             parentField={"projectPhaseId"}
-            parentParams={["projectId", "projectPhaseId"]}
             form={form}
             name={"projectBatchId"}
             allowClear={true}
