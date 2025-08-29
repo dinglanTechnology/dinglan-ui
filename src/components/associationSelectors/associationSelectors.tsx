@@ -9,32 +9,31 @@ type OptionItem = {
 
 /**
  * 关联选择器
- * @param dependencies 依赖值
  * @param form 表单实例
  * @param name 字段名
- * @param getOptions 获取选项的函数
- * @param waitTime 等待时间，默认1000ms
+ * @param getOptions 获取列表选项的函数，无父级依赖时，参数为空，有父级依赖时，参数为父级依赖值
+ * @param waitTime 等待时间，默认0ms
+ * @param parentField 父级字段
  */
 interface AssociationSelectorsParams extends SelectProps {
-  dependencies?: string | undefined;
+  parentField?: string;
   form: FormInstance;
   name: string;
-  getOptions: (value?: string | number | boolean) => Promise<OptionItem[]>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOptions: (params?: any) => Promise<OptionItem[]>;
   waitTime?: number;
 }
 
 const AssociationSelectors = ({
-  dependencies,
+  parentField,
   form,
   name,
   getOptions,
-  waitTime = 1000,
+  waitTime = 0,
   ...restProps
 }: AssociationSelectorsParams) => {
   // 依赖值
-  const dependenciesVal = Form.useWatch(dependencies, form);
-  // 当前字段值
-  const currentValue = Form.useWatch(name, form);
+  const dependenciesVal = Form.useWatch(parentField, form);
   // 是否是首次加载
   const [isFirstLoad, { setFalse }] = useBoolean(true);
 
@@ -59,7 +58,7 @@ const AssociationSelectors = ({
   const { run: dependenciesChangeFn } = useDebounceFn(
     () => {
       // 不存在依赖值，直接调用getOptions
-      if (!dependencies) {
+      if (!parentField) {
         return getOptionsList();
       }
 
@@ -68,21 +67,21 @@ const AssociationSelectors = ({
 
       // 存在上级依赖且上级依赖值为空
       if (
-        !!dependencies &&
+        !!parentField &&
         (isArray ? !dependenciesVal.length : !dependenciesVal)
       ) {
         return clearFn();
       }
 
       // 存在上级依赖且上级依赖值不为空
-      if (!!dependencies && dependenciesVal) {
-        // 如果当前字段有初始值，且是首次加载，则不清空
-        if (currentValue && isFirstLoad) {
+      if (!!parentField && dependenciesVal) {
+        // 如果是首次加载，则不清空
+        if (isFirstLoad) {
           setFalse();
         } else {
           clearFn();
         }
-        getOptionsList(isArray ? dependenciesVal.join(",") : dependenciesVal);
+        getOptionsList(dependenciesVal);
       }
     },
     { wait: waitTime },
@@ -97,6 +96,7 @@ const AssociationSelectors = ({
       fieldNames={{ label: "name", value: "code" }}
       options={optionsList}
       loading={loading}
+      style={{ width: "100%", ...restProps.style }}
       {...restProps}
     />
   );

@@ -6,7 +6,7 @@ import * as AssociationSelectors from "./AssociationSelectors.stories.tsx";
 
 # AssociationSelectors
 
-关联选择器组件，基于 Ant Design Select 组件封装，主要用于处理有依赖关系的下拉选择场景。支持异步数据获取、级联选择、初始值保持等功能。
+关联选择器组件，基于 Ant Design Select 组件封装，主要用于处理有依赖关系的下拉选择场景。支持异步数据获取、级联选择、防抖优化等功能。
 
 #### Example
 
@@ -32,26 +32,49 @@ const Example = () => {
     return [
       { name: "鹿溪源", code: "鹿溪源" },
       { name: "龙栖海岸", code: "龙栖海岸" },
+      { name: "龙栖海岸2期", code: "龙栖海岸2期" },
     ];
   };
 
   // 获取期数选项（依赖项目）
   const getProjectPhaseOptions = async (
-    projectId?: string | number | boolean
+    projectId: string
+  ): Promise<OptionItem[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([
+          { name: `${projectId}1期`, code: `${projectId}1期` },
+          { name: `${projectId}2期`, code: `${projectId}2期` },
+          { name: `${projectId}3期`, code: `${projectId}3期` },
+        ]);
+      }, 3000);
+    });
+  };
+
+  // 获取批次选项（依赖期数）
+  const getProjectBatchOptions = async (
+    projectPhaseId: string
   ): Promise<OptionItem[]> => {
     return [
-      { name: `${projectId}1期`, code: `${projectId}1期` },
-      { name: `${projectId}2期`, code: `${projectId}2期` },
+      { name: `${projectPhaseId}1批次`, code: "1批次" },
+      { name: `${projectPhaseId}2批次`, code: "2批次" },
+      { name: `${projectPhaseId}3批次`, code: "3批次" },
     ];
   };
 
   return (
     <Form 
       form={form}
+      layout="horizontal"
+      size="middle"
+      labelAlign="right"
       initialValues={{
         projectId: "鹿溪源",
         projectPhaseId: "鹿溪源1期",
+        projectBatchId: "鹿溪源1期1批次",
       }}
+      clearOnDestroy={true}
+      preserve={false}
     >
       {/* 无依赖的选择器 */}
       <Form.Item label="项目" name="projectId">
@@ -60,19 +83,31 @@ const Example = () => {
           name="projectId"
           getOptions={getProjectOptions}
           allowClear={true}
-          placeholder="请选择项目"
         />
       </Form.Item>
       
-      {/* 有依赖的选择器 */}
+      {/* 单依赖的选择器 */}
       <Form.Item label="期数" name="projectPhaseId">
         <AssociationSelectors
-          dependencies="projectId"
+          parentField="projectId"
           form={form}
           name="projectPhaseId"
           getOptions={getProjectPhaseOptions}
           allowClear={true}
           suffixIcon={<div>期</div>}
+        />
+      </Form.Item>
+
+      {/* 单依赖的选择器 */}
+      <Form.Item label="批次" name="projectBatchId">
+        <AssociationSelectors
+          parentField="projectPhaseId"
+          form={form}
+          name="projectBatchId"
+          getOptions={getProjectBatchOptions}
+          allowClear={true}
+          suffixIcon={<div>批次</div>}
+          waitTime={0}
         />
       </Form.Item>
     </Form>
@@ -88,19 +123,21 @@ export default Example;
 
 - **form** _`FormInstance`_ - Ant Design Form 实例，用于表单字段管理和值监听。
 - **name** _`string`_ - 表单字段名称，对应 Form.Item 的 name 属性。
-- **getOptions** _`(value?: string | number | boolean) => Promise<OptionItem[]>`_ - 异步获取选项数据的函数。
+- **getOptions** _`(params?: any) => Promise<OptionItem[]>`_ - 异步获取选项数据的函数。
   - 无依赖时：不需要参数 `() => Promise<OptionItem[]>`
-  - 有依赖时：接收依赖字段的值作为参数
+  - 有依赖时：接收依赖字段的值作为参数 `(value: any) => Promise<OptionItem[]>`
 
 #### 可选参数
 
-- **dependencies** _`string | number | boolean | undefined | null`_ - 依赖的字段名称，当该字段值变化时会重新获取选项。
-- **allowClear** _`boolean`_ - 是否显示清除按钮，允许清空选择。
-- **placeholder** _`string`_ - 输入框占位文本。
-- **suffixIcon** _`React.ReactNode`_ - 自定义的选择框后缀图标。
-- **disabled** _`boolean`_ - 是否禁用选择器。
-- **loading** _`boolean`_ - 是否显示加载状态。
-- **mode** _`"multiple" | "tags"`_ - 选择模式，支持多选。
+- **parentField** _`string`_ - 父级依赖字段名称，当该字段值变化时会重新获取选项。
+- **waitTime** _`number`_ - 防抖等待时间，默认为 0ms。
+- **...restProps** - 继承 Ant Design Select 的所有其他属性，如：
+  - **allowClear** _`boolean`_ - 是否显示清除按钮，允许清空选择。
+  - **placeholder** _`string`_ - 输入框占位文本。
+  - **suffixIcon** _`React.ReactNode`_ - 自定义的选择框后缀图标。
+  - **disabled** _`boolean`_ - 是否禁用选择器。
+  - **mode** _`"multiple" | "tags"`_ - 选择模式，支持多选。
+  - **style** _`CSSProperties`_ - 自定义样式。
 
 #### 选项数据格式
 
@@ -118,35 +155,84 @@ type OptionItem = {
 - 支持手动触发和自动重新请求
 - 内置加载状态和错误处理
 
-### 🔗 级联选择支持
-- 支持多级依赖关系（项目 → 期数 → 批次）
-- 依赖值变化时自动清空下级选项
-- 支持数组类型的依赖值（自动转换为逗号分隔字符串）
+### 🔗 简洁的依赖关系
+- **无依赖**：独立的选择器，直接获取所有选项
+- **单依赖**：依赖一个父级字段，传递单个值给 getOptions
+
+### ⚡ 防抖优化
+- 内置防抖功能，避免高频切换时的重复请求
+- 可自定义防抖等待时间（waitTime）
+- 默认为 0ms，可根据需要调整
 
 ### 💾 初始值保持
 - 支持 Form `initialValues` 的初始值设置
 - 首次加载时保持初始值不被清空
 - 智能判断是否为首次加载，避免误清空
 
-### ⚡ 性能优化
-- 使用 `useUpdateEffect` 避免首次渲染时的不必要请求
-- 使用 `Form.useWatch` 精确监听字段变化
-- 支持选项数据的手动更新（mutate）
-
 ### 🎨 完全兼容
 - 继承 Ant Design Select 的所有属性
 - 完全兼容 Form 表单验证
-- 支持所有 Select 的样式定制
+- 默认宽度 100%，支持样式定制
+- 自动设置 `fieldNames={{ label: "name", value: "code" }}`
+
+### 🧹 智能清空
+- 当依赖字段值为空时，自动清空当前字段值和选项列表
+- 支持数组类型依赖值的判断
+- 依赖字段变化时自动清空当前选择（首次加载除外）
 
 ## 使用场景
 
-1. **地区选择**：省份 → 城市 → 区县
-2. **项目管理**：项目 → 期数 → 批次
-3. **分类选择**：一级分类 → 二级分类 → 三级分类
-4. **组织架构**：部门 → 小组 → 成员
+### 1. **独立选择器**（无依赖）
+```typescript
+// 独立的项目选择
+<AssociationSelectors
+  form={form}
+  name="projectId"
+  getOptions={() => getProjects()}
+/>
+```
+
+### 2. **简单级联**（单依赖）
+```typescript
+// 项目 → 期数
+<AssociationSelectors
+  parentField="projectId"
+  form={form}
+  name="projectPhaseId"
+  getOptions={(projectId) => getPhases(projectId)}
+/>
+```
+
+### 3. **多级级联**
+```typescript
+// 项目 → 期数 → 批次
+<AssociationSelectors
+  parentField="projectId"
+  form={form}
+  name="projectPhaseId"
+  getOptions={(projectId) => getPhases(projectId)}
+/>
+
+<AssociationSelectors
+  parentField="projectPhaseId"
+  form={form}
+  name="projectBatchId"
+  getOptions={(projectPhaseId) => getBatches(projectPhaseId)}
+/>
+```
+
+## 工作原理
+
+1. **依赖监听**：使用 `Form.useWatch` 监听 `parentField` 字段值变化
+2. **首次加载标识**：使用 `useBoolean` 跟踪是否为首次加载，避免初始值被清空
+3. **防抖处理**：使用 `useDebounceFn` 对依赖变化进行防抖处理
+4. **智能清空**：依赖值为空时清空当前字段，依赖值变化时清空当前选择（首次除外）
+5. **异步请求**：使用 `useRequest` 管理选项数据的异步获取
 
 ## 注意事项
 
 - 确保 `getOptions` 函数返回正确的 Promise 类型
 - 依赖字段变化时，当前字段值会被清空（除首次加载外）
-- 支持数组类型的依赖值，会自动转换为字符串传递给 `getOptions`
+- 组件会自动设置 `fieldNames={{ label: "name", value: "code" }}`
+- 防抖功能可以有效减少网络请求，建议根据实际情况调整 `waitTime`
+- 支持数组类型的依赖值判断，当数组为空时会清空选项
