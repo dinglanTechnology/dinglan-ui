@@ -1,0 +1,47 @@
+# DownloadWrap
+
+DownloadWrap 是一个用于包装下载功能的组件，可以将任何子元素转换为可下载的触发器。
+
+## 特性
+
+- 支持直接下载 URL 文件
+- 支持自定义下载回调函数
+- 支持禁用状态
+- 支持自定义文件名
+- 响应式设计，支持悬停效果
+
+## 使用方法
+
+```tsx
+import { DownloadWrap } from "dinglan-ui";
+
+// 基本用法
+<DownloadWrap
+  fileName="example.txt"
+  downloadUrl="https://example.com/file.txt"
+>
+  <button>下载文件</button>
+</DownloadWrap>
+
+// 使用自定义回调
+<DownloadWrap
+  fileName="custom.json"
+  onDownload={() => {
+    // 自定义下载逻辑
+    console.log("开始下载...");
+  }}
+>
+  <div>点击下载</div>
+</DownloadWrap>
+```
+
+## Props
+
+| 属性 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| children | ReactNode | - | 子元素内容 |
+| fileName | string | "download" | 下载文件名 |
+| downloadUrl | string | - | 下载文件的 URL |
+| disabled | boolean | false | 是否禁用下载 |
+| className | string | - | 自定义 CSS 类名 |
+| onDownload | () => void | - | 自定义下载回调函数 |
