@@ -1,47 +1,149 @@
 # DownloadWrap
 
-DownloadWrap 是一个用于包装下载功能的组件，可以将任何子元素转换为可下载的触发器。
+DownloadWrap 是一个功能强大的下载组件，支持多种下载方式，包括单文件下载、多文件下载、ZIP 打包下载，以及通过 API 获取文件内容进行下载。
 
-## 特性
+## ✨ 特性
 
-- 支持直接下载 URL 文件
-- 支持自定义下载回调函数
-- 支持禁用状态
-- 支持自定义文件名
-- 响应式设计，支持悬停效果
+- 🚀 **多种下载方式**: 支持 URL 下载、API 获取、多文件下载
+- 📦 **ZIP 打包**: 支持将多个文件打包成 ZIP 下载
+- 📊 **进度跟踪**: 实时显示下载进度和状态
+- 🔄 **重试机制**: 自动重试失败的下载
+- ⚡ **并发控制**: 支持控制并发下载数量
+- 🛡️ **错误处理**: 详细的错误分类和处理
+- 📏 **文件大小限制**: 可配置最大文件大小
+- ⏱️ **超时控制**: 可配置请求超时时间
+- 🎯 **类型安全**: 完整的 TypeScript 支持
 
-## 使用方法
+## 🚀 使用方法
+
+### 基本用法
 
 ```tsx
 import { DownloadWrap } from "dinglan-ui";
 
-// 基本用法
+// 单文件下载
 <DownloadWrap
   fileName="example.txt"
-  downloadUrl="https://example.com/file.txt"
+  downloadUrls={["https://example.com/file.txt"]}
 >
   <button>下载文件</button>
+</DownloadWrap>;
+```
+
+### 多文件下载
+
+```tsx
+// 分别下载多个文件
+<DownloadWrap
+  fileName="documents"
+  downloadUrls={[
+    "https://example.com/doc1.pdf",
+    "https://example.com/doc2.pdf",
+    "https://example.com/doc3.pdf"
+  ]}
+  maxConcurrency={2}
+>
+  <button>下载多个文件</button>
 </DownloadWrap>
 
-// 使用自定义回调
+// ZIP 打包下载
 <DownloadWrap
-  fileName="custom.json"
-  onDownload={() => {
-    // 自定义下载逻辑
-    console.log("开始下载...");
-  }}
+  fileName="documents_package"
+  downloadUrls={[
+    "https://example.com/doc1.pdf",
+    "https://example.com/doc2.pdf"
+  ]}
+  enableZip={true}
 >
-  <div>点击下载</div>
+  <button>下载压缩包</button>
 </DownloadWrap>
 ```
 
-## Props
+### API 下载
 
-| 属性 | 类型 | 默认值 | 描述 |
-|------|------|--------|------|
-| children | ReactNode | - | 子元素内容 |
-| fileName | string | "download" | 下载文件名 |
-| downloadUrl | string | - | 下载文件的 URL |
-| disabled | boolean | false | 是否禁用下载 |
-| className | string | - | 自定义 CSS 类名 |
-| onDownload | () => void | - | 自定义下载回调函数 |
+```tsx
+// 通过 API 获取文件内容
+<DownloadWrap
+  fileName="api-file.pdf"
+  apiFetch={async () => {
+    const response = await fetch("/api/download");
+    return response.blob();
+  }}
+  onProgress={(progress) => {
+    console.log(`下载进度: ${progress.percentage}%`);
+  }}
+  onLoadingChange={(loading) => {
+    console.log(`加载状态: ${loading}`);
+  }}
+>
+  <button>从 API 下载</button>
+</DownloadWrap>
+```
+
+## 📋 Props
+
+| 属性            | 类型                                                            | 默认值    | 描述                            |
+| --------------- | --------------------------------------------------------------- | --------- | ------------------------------- |
+| children        | ReactNode                                                       | -         | 子元素内容                      |
+| fileName        | string                                                          | -         | 下载文件名                      |
+| className       | string                                                          | -         | 自定义 CSS 类名                 |
+| disabled        | boolean                                                         | false     | 是否禁用下载                    |
+| downloadUrls    | string[]                                                        | -         | 下载文件的 URL 数组             |
+| apiFetch        | (params?: Record&lt;string, unknown&gt;) => Promise&lt;Blob&gt; | -         | API 获取文件内容的函数          |
+| enableZip       | boolean                                                         | false     | 是否启用 ZIP 打包               |
+| maxConcurrency  | number                                                          | 3         | 最大并发下载数                  |
+| timeout         | number                                                          | 30000     | 请求超时时间（毫秒）            |
+| retryCount      | number                                                          | 3         | 重试次数                        |
+| retryDelay      | number                                                          | 1000      | 重试延迟（毫秒）                |
+| maxFileSize     | number                                                          | 104857600 | 最大文件大小（字节，默认100MB） |
+| onSuccess       | (fileName: string) => void                                      | -         | 下载成功回调                    |
+| onFail          | (error: DownloadError, fileName: string) => void                | -         | 下载失败回调                    |
+| onProgress      | (progress: DownloadProgress) => void                            | -         | 下载进度回调                    |
+| onLoadingChange | (isLoading: boolean) => void                                    | -         | 加载状态变化回调                |
+
+## 📊 类型定义
+
+### DownloadProgress
+
+```typescript
+interface DownloadProgress {
+  loaded: number; // 已下载字节数
+  total: number; // 总字节数
+  percentage: number; // 下载百分比
+  fileName: string; // 当前文件名
+}
+```
+
+### DownloadError
+
+```typescript
+class DownloadError extends Error {
+  type: DownloadErrorType; // 错误类型
+  statusCode?: number; // HTTP 状态码
+  url?: string; // 请求 URL
+}
+
+enum DownloadErrorType {
+  NETWORK_ERROR = "NETWORK_ERROR",
+  HTTP_ERROR = "HTTP_ERROR",
+  ZIP_ERROR = "ZIP_ERROR",
+  ABORT_ERROR = "ABORT_ERROR",
+  UNKNOWN_ERROR = "UNKNOWN_ERROR",
+}
+```
+
+## 🎯 使用场景
+
+- **文档下载**: 单个或多个文档文件下载
+- **图片批量下载**: 多张图片的批量下载或打包下载
+- **API 文件下载**: 通过后端 API 获取文件内容
+- **大文件下载**: 支持进度跟踪和错误重试的大文件下载
+- **批量资源下载**: 需要控制并发数量的批量下载
+
+## 💡 最佳实践
+
+1. **大文件下载**: 设置合适的 `maxFileSize` 和 `timeout`
+2. **批量下载**: 使用 `maxConcurrency` 控制并发数，避免浏览器限制
+3. **用户体验**: 使用 `onProgress` 和 `onLoadingChange` 提供实时反馈
+4. **错误处理**: 使用 `onFail` 处理不同类型的下载错误
+5. **性能优化**: 对于大量文件，考虑使用 ZIP 打包而不是分别下载
