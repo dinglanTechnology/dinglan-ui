@@ -1,7 +1,7 @@
 import { FormInstance, message, Upload, UploadFile, UploadProps } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { RcFile } from "antd/es/upload";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface OSSResponse {
   params: {
@@ -20,6 +20,10 @@ type OssFileUploadProps = UploadProps & {
   generateOss: () => Promise<OSSResponse>;
   form: FormInstance;
   nameField: string;
+  /** 支持的文件格式，例如: ['image/*', 'image/jpeg', 'image/png'] 或 ['*'] 表示所有格式 */
+  fileTypes?: string[];
+  /** 文件大小限制，单位：MB，默认5MB */
+  maxFileSize?: number;
 };
 
 const OssFileUpload = ({
@@ -28,37 +32,55 @@ const OssFileUpload = ({
   generateOss,
   form,
   nameField,
+  fileTypes = ["image/*"],
+  maxFileSize = 5,
   ...props
 }: OssFileUploadProps) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // 上传前校验,限制图片大小不能超过5MB
+  // 检查文件类型是否匹配
+  const checkFileType = (file: RcFile): boolean => {
+    // 如果包含 '*' 表示支持所有格式
+    if (fileTypes.includes("*")) {
+      return true;
+    }
+
+    // 检查是否匹配任一支持的格式
+    return fileTypes.some((type) => {
+      if (type.endsWith("/*")) {
+        // 处理通配符格式，如 'image/*'
+        const prefix = type.slice(0, -2);
+        return file.type.startsWith(prefix + "/");
+      } else {
+        // 精确匹配，如 'image/jpeg'
+        return file.type === type;
+      }
+    });
+  };
+
+  // 上传前校验
   const beforeUpload = (file: RcFile) => {
-    const isImage = file.type.startsWith("image/");
-    const isGif = file.type === "image/gif";
-    if (!isImage) {
-      message.error("仅支持图片格式!");
+    // 检查文件格式
+    if (!checkFileType(file)) {
+      const supportedFormats = fileTypes.join(", ");
+      message.error(`仅支持以下格式的文件: ${supportedFormats}`);
       return Upload.LIST_IGNORE;
     }
-    if (isGif) {
-      message.error("不支持 GIF 格式的图片上传!");
+
+    // 检查文件大小
+    const maxSizeInBytes = maxFileSize * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      message.error(`文件大小不能超过${maxFileSize}MB!`);
       return Upload.LIST_IGNORE;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      message.error("图片大小不能超过5MB!");
-      return Upload.LIST_IGNORE;
-    }
+
     return true;
   };
 
   // 移除数据
   const handleRemove: UploadProps["onRemove"] = (file) => {
     console.log("移除数据", fileList);
-    form.setFieldValue(
-      nameField,
-      fileList.map((item) => item.url),
-    );
     setFileList(fileList.filter((item) => item.uid !== file.uid));
   };
 
@@ -83,7 +105,6 @@ const OssFileUpload = ({
 
       if (urls) {
         setFileList((preList) => [...preList, ...processFileList(urls)]);
-        form.setFieldValue(nameField, urls);
       }
     } catch (error) {
       message.error("图片上传失败");
@@ -122,6 +143,17 @@ const OssFileUpload = ({
 
     return fileUrl;
   };
+
+  useEffect(() => {
+    console.log(fileList, "fileList");
+    // 只返回状态为 'done' 的文件URL，过滤掉被删除或上传失败的文件
+    const validUrls = fileList
+      .filter((item) => item.status === "done" && item.url)
+      .map((item) => item.url);
+
+    form.setFieldValue(nameField, validUrls);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileList]);
 
   return (
     <Upload

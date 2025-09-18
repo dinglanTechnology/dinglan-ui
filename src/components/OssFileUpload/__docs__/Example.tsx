@@ -29,15 +29,46 @@ const Example = () => {
 
   return (
     <>
-      <Form form={form}>
-        <Form.Item label="OssFileUpload" name="ossFileUpload">
+      <Form form={form} layout="vertical">
+        <Form.Item label="图片上传" name="imageUpload">
           <OssFileUpload
-            filePath="assets/ossFileUpload/"
+            filePath="assets/images/"
             generateOss={generateOss}
             listType="picture-card"
             form={form}
-            nameField="ossFileUpload"
+            nameField="imageUpload"
             maxCount={3}
+            fileTypes={["image/*"]}
+            maxFileSize={5}
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="文档上传（PDF, Word, Excel，10MB限制）"
+          name="documentUpload"
+        >
+          <OssFileUpload
+            filePath="assets/documents/"
+            generateOss={generateOss}
+            listType="text"
+            form={form}
+            nameField="documentUpload"
+            maxCount={5}
+            fileTypes={["application/pdf"]}
+            maxFileSize={10}
+          />
+        </Form.Item>
+
+        <Form.Item label="任意格式文件上传（20MB限制）" name="anyFileUpload">
+          <OssFileUpload
+            filePath="assets/files/"
+            generateOss={generateOss}
+            listType="text"
+            form={form}
+            nameField="anyFileUpload"
+            maxCount={1}
+            fileTypes={["*"]}
+            maxFileSize={20}
           />
         </Form.Item>
       </Form>
