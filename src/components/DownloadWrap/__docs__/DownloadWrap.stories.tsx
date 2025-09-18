@@ -60,8 +60,8 @@ const mockApiFetch = async (): Promise<string[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([
-        "https://via.placeholder.com/600x400/FF6B6B/FFFFFF?text=API+Image+1",
-        "https://via.placeholder.com/600x400/4ECDC4/FFFFFF?text=API+Image+2",
+        "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
+        "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
       ]);
     }, 1000);
   });
@@ -71,7 +71,7 @@ export const Default: Story = {
   args: {
     fileName: "example.jpg",
     downloadUrls: [
-      "https://via.placeholder.com/600x400/007bff/ffffff?text=Download+Me",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
     ],
     children: <button>下载文件</button>,
   },
@@ -81,9 +81,9 @@ export const MultipleFiles: Story = {
   args: {
     fileName: "images",
     downloadUrls: [
-      "https://via.placeholder.com/600x400/28a745/ffffff?text=Image+1",
-      "https://via.placeholder.com/600x400/dc3545/ffffff?text=Image+2",
-      "https://via.placeholder.com/600x400/ffc107/ffffff?text=Image+3",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
     ],
     children: <button>下载多个文件</button>,
   },
@@ -93,9 +93,9 @@ export const ZipDownload: Story = {
   args: {
     fileName: "images_package",
     downloadUrls: [
-      "https://via.placeholder.com/600x400/E74C3C/FFFFFF?text=Red",
-      "https://via.placeholder.com/600x400/3498DB/FFFFFF?text=Blue",
-      "https://via.placeholder.com/600x400/2ECC71/FFFFFF?text=Green",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
     ],
     enableZip: true,
     children: <button>下载ZIP压缩包</button>,
@@ -113,8 +113,10 @@ export const ApiZipDownload: Story = {
 
 export const Disabled: Story = {
   args: {
-    fileName: "disabled-file.txt",
-    downloadUrls: ["data:text/plain;charset=utf-8,Disabled%20Content"],
+    fileName: "test.jpg",
+    downloadUrls: [
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
+    ],
     disabled: true,
     children: <button>禁用状态</button>,
   },
@@ -122,11 +124,11 @@ export const Disabled: Story = {
 
 export const LargeFileList: Story = {
   args: {
-    fileName: "large-file-list",
+    fileName: "test.jpg",
     downloadUrls: Array.from(
       { length: 10 },
       (_, i) =>
-        `data:text/plain;charset=utf-8,Large%20File%20${i + 1}%20Content`,
+        `https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg`,
     ),
     children: <button>下载大量文件</button>,
   },
@@ -134,11 +136,11 @@ export const LargeFileList: Story = {
 
 export const LargeFileListZip: Story = {
   args: {
-    fileName: "large_files_package",
+    fileName: "test.jpg",
     downloadUrls: Array.from(
       { length: 10 },
       (_, i) =>
-        `data:text/plain;charset=utf-8,Large%20File%20${i + 1}%20Content`,
+        `https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg`,
     ),
     enableZip: true,
     children: <button>下载大量文件（ZIP打包）</button>,
@@ -147,9 +149,9 @@ export const LargeFileListZip: Story = {
 
 export const CustomFileName: Story = {
   args: {
-    fileName: "custom-report.json",
+    fileName: "test.jpg",
     downloadUrls: [
-      'data:application/json;charset=utf-8,{"message":"Custom JSON file content","timestamp":"2024-01-01T00:00:00Z"}',
+      "https://microbex-hte-oss.zhilingtech.com/1755855509851-9X3HnpAdk-hH_KkW_QOWimages1.jpg",
     ],
     children: <button>下载自定义文件</button>,
   },
