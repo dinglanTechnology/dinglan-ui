@@ -1,1 +1,1 @@
-export { default as AssociationSelectors } from "./AssociationSelectors";
+export { default as AssociationSelectors } from "./associationSelectors";
