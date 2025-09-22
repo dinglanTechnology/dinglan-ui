@@ -1,4 +1,4 @@
-import { message, Upload, UploadFile, UploadProps } from "antd";
+import { message, Upload, UploadFile, UploadProps, Image } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { RcFile } from "antd/es/upload";
 import { useEffect, useState } from "react";
@@ -46,6 +46,8 @@ const OssFileUpload = ({
   ...props
 }: OssFileUploadProps) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
 
   // 监听fileList变化，更新onChange回调
   useEffect(() => {
@@ -95,9 +97,46 @@ const OssFileUpload = ({
     return true;
   };
 
+  // 检查是否为图片类型
+  const isImageFile = (file: UploadFile): boolean => {
+    const imageTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/bmp",
+      "image/webp",
+      "image/svg+xml",
+    ];
+    return imageTypes.some(
+      (type) =>
+        file.type === type ||
+        file.name?.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i),
+    );
+  };
+
   // 移除数据
   const handleRemove: UploadProps["onRemove"] = (file) => {
     setFileList((preList) => preList.filter((item) => item.uid !== file.uid));
+  };
+
+  // 处理预览
+  const handlePreview = async (file: UploadFile) => {
+    // 如果是图片类型，使用Image组件预览
+    if (isImageFile(file)) {
+      setPreviewImage(file.url || file.thumbUrl || "");
+      setPreviewVisible(true);
+    } else {
+      // 非图片类型，直接下载
+      if (file.url) {
+        const link = document.createElement("a");
+        link.href = file.url;
+        link.download = file.name || "download";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
   };
 
   // 自定义上传处理器
@@ -233,25 +272,44 @@ const OssFileUpload = ({
   };
 
   return (
-    <Upload
-      {...props}
-      fileList={fileList}
-      beforeUpload={beforeUpload}
-      customRequest={handleCustomRequest}
-      onRemove={handleRemove}
-      onChange={onChangeFn}
-      progress={{
-        strokeColor: {
-          "0%": "#108ee9",
-          "100%": "#87d068",
-        },
-        size: 3,
-        format: (percent) => percent && `${parseFloat(percent.toFixed(2))}%`,
-      }}
-    >
-      {fileList.length < (props.maxCount || 1) &&
-        (children ? children : <PlusOutlined style={{ fontSize: 30 }} />)}
-    </Upload>
+    <>
+      <Upload
+        {...props}
+        fileList={fileList}
+        beforeUpload={beforeUpload}
+        customRequest={handleCustomRequest}
+        onRemove={handleRemove}
+        onPreview={handlePreview}
+        onChange={onChangeFn}
+        progress={{
+          strokeColor: {
+            "0%": "#108ee9",
+            "100%": "#87d068",
+          },
+          size: 3,
+          format: (percent) => percent && `${parseFloat(percent.toFixed(2))}%`,
+        }}
+      >
+        {fileList.length < (props.maxCount || 1) &&
+          (children ? children : <PlusOutlined style={{ fontSize: 30 }} />)}
+      </Upload>
+
+      <Image
+        width={0}
+        height={0}
+        style={{ display: "none" }}
+        src={previewImage}
+        preview={{
+          visible: previewVisible,
+          onVisibleChange: (visible) => {
+            setPreviewVisible(visible);
+            if (!visible) {
+              setPreviewImage("");
+            }
+          },
+        }}
+      />
+    </>
   );
 };
 

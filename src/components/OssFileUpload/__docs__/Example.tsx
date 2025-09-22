@@ -30,7 +30,10 @@ const Example = () => {
   return (
     <>
       <Form form={form} layout="vertical">
-        <Form.Item label="图片上传（带回调和重试）" name="imageUpload">
+        <Form.Item
+          label="图片上传（支持Image预览、回调和重试）"
+          name="imageUpload"
+        >
           <OssFileUpload
             filePath="assets/images/"
             generateOss={generateOss}
@@ -52,7 +55,7 @@ const Example = () => {
         </Form.Item>
 
         <Form.Item
-          label="文档上传（Excel，10MB限制，3次重试）"
+          label="文档上传（Excel，点击预览下载，3次重试）"
           name="documentUpload"
         >
           <OssFileUpload
