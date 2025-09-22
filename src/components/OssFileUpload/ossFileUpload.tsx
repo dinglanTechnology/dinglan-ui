@@ -18,6 +18,8 @@ type OssFileUploadProps = UploadProps & {
   children?: React.ReactNode;
   filePath: string;
   generateOss: () => Promise<OSSResponse>;
+  /** 重命名文件名称 */
+  fileName?: string;
   /** 支持的文件格式 */
   fileTypes?: string[];
   /** 文件大小限制，单位：MB，默认5MB */
@@ -37,6 +39,7 @@ const OssFileUpload = ({
   children,
   filePath,
   generateOss,
+  fileName,
   fileTypes = ["image/*"],
   maxFileSize = 5,
   retryCount = 0,
@@ -155,7 +158,7 @@ const OssFileUpload = ({
       // 添加文件到列表，状态为uploading
       const uploadingFile: UploadFile = {
         uid: fileUid,
-        name: fileObj.name,
+        name: fileName || fileObj.name,
         status: "uploading",
         percent: 0,
         originFileObj: fileObj as RcFile,
@@ -234,7 +237,7 @@ const OssFileUpload = ({
     try {
       const res = await generateOss();
       const { policy, signature, accessid, host } = res.params;
-      const name = fileUrlInfo.name;
+      const name = fileName || fileUrlInfo.name;
 
       const formData = new FormData();
       formData.append("policy", policy);
@@ -249,7 +252,25 @@ const OssFileUpload = ({
         body: formData,
       };
 
-      await fetch(host, param);
+      const response = await fetch(host, param);
+
+      // 检查响应状态，如果不成功则抛出错误
+      if (!response.ok) {
+        let errorMessage = `上传失败: ${response.status} ${response.statusText}`;
+
+        // 尝试获取更详细的错误信息
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage += ` - ${errorText}`;
+          }
+        } catch {
+          // 忽略解析错误响应体的错误
+        }
+
+        throw new Error(errorMessage);
+      }
+
       const fileUrl = host + "/" + filePath + name;
       return fileUrl;
     } catch (error) {
@@ -262,7 +283,9 @@ const OssFileUpload = ({
       }
 
       // 重试次数用完，抛出错误
-      throw new Error(`上传失败，已重试${retryCount}次`);
+      throw new Error(
+        retryCount ? `上传失败，已重试${retryCount}次` : "上传失败",
+      );
     }
   };
 

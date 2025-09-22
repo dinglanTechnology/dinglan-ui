@@ -13,7 +13,7 @@ const Example = () => {
         expire: "1758590879",
         policy:
           "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0yM1QwMToyNzo1OS42NDZaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
-        signature: "gVaQjSfLWlb0oWs6rQ3npMzGbyU=",
+        signature: "",
         accessid: "LTAI5tMCpHgpcdTpEMUXaoZQ",
         host: "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com",
         bucket: "assets-resource-1",
