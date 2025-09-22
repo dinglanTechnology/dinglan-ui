@@ -6,14 +6,14 @@ const Example = () => {
   const [form] = Form.useForm();
 
   const generateOss = async () => {
-    await setTimeout(() => {}, 2000);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     return Promise.resolve({
       params: {
-        expire: "1758249899",
+        expire: "1758590879",
         policy:
-          "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0xOVQwMjo0NDo1OS4zMjNaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
-        signature: "fYz8x/StmnIgGtU9pKfCAU95Cbk=",
+          "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0yM1QwMToyNzo1OS42NDZaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
+        signature: "gVaQjSfLWlb0oWs6rQ3npMzGbyU=",
         accessid: "LTAI5tMCpHgpcdTpEMUXaoZQ",
         host: "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com",
         bucket: "assets-resource-1",
@@ -35,8 +35,6 @@ const Example = () => {
             filePath="assets/images/"
             generateOss={generateOss}
             listType="picture-card"
-            form={form}
-            nameField="imageUpload"
             maxCount={3}
             fileTypes={["image/*"]}
             maxFileSize={5}
@@ -51,10 +49,8 @@ const Example = () => {
             filePath="assets/documents/"
             generateOss={generateOss}
             listType="text"
-            form={form}
-            nameField="documentUpload"
             maxCount={5}
-            fileTypes={["application/pdf"]}
+            fileTypes={["application/xlsx"]}
             maxFileSize={10}
           />
         </Form.Item>
@@ -64,9 +60,7 @@ const Example = () => {
             filePath="assets/files/"
             generateOss={generateOss}
             listType="text"
-            form={form}
-            nameField="anyFileUpload"
-            maxCount={1}
+            maxCount={3}
             fileTypes={["*"]}
             maxFileSize={20}
           />

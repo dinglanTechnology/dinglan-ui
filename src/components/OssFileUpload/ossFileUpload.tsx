@@ -1,7 +1,7 @@
-import { FormInstance, message, Upload, UploadFile, UploadProps } from "antd";
+import { message, Upload, UploadFile, UploadProps } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { RcFile } from "antd/es/upload";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export interface OSSResponse {
   params: {
@@ -18,20 +18,17 @@ type OssFileUploadProps = UploadProps & {
   children?: React.ReactNode;
   filePath: string;
   generateOss: () => Promise<OSSResponse>;
-  form: FormInstance;
-  nameField: string;
-  /** 支持的文件格式，例如: ['image/*', 'image/jpeg', 'image/png'] 或 ['*'] 表示所有格式 */
+  /** 支持的文件格式 */
   fileTypes?: string[];
   /** 文件大小限制，单位：MB，默认5MB */
   maxFileSize?: number;
+  onChange?: (fileList: string[]) => void;
 };
 
 const OssFileUpload = ({
   children,
   filePath,
   generateOss,
-  form,
-  nameField,
   fileTypes = ["image/*"],
   maxFileSize = 5,
   ...props
@@ -82,6 +79,11 @@ const OssFileUpload = ({
   const handleRemove: UploadProps["onRemove"] = (file) => {
     console.log("移除数据", fileList);
     setFileList(fileList.filter((item) => item.uid !== file.uid));
+    props?.onChange?.(
+      fileList
+        .filter((item) => item.uid !== file.uid)
+        .map((item) => item.url || ""),
+    );
   };
 
   // 处理数据
@@ -105,6 +107,9 @@ const OssFileUpload = ({
 
       if (urls) {
         setFileList((preList) => [...preList, ...processFileList(urls)]);
+        props?.onChange?.(
+          [...fileList, ...processFileList(urls)].map((item) => item.url || ""),
+        );
       }
     } catch (error) {
       message.error("图片上传失败");
@@ -144,25 +149,27 @@ const OssFileUpload = ({
     return fileUrl;
   };
 
-  useEffect(() => {
-    console.log(fileList, "fileList");
-    // 只返回状态为 'done' 的文件URL，过滤掉被删除或上传失败的文件
-    const validUrls = fileList
-      .filter((item) => item.status === "done" && item.url)
-      .map((item) => item.url);
-
-    form.setFieldValue(nameField, validUrls);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fileList]);
+  const onChangeFn: UploadProps["onChange"] = (info) => {
+    console.log(info, "info");
+  };
 
   return (
     <Upload
       {...props}
-      fileList={fileList}
+      fileList={fileList.length ? fileList : undefined}
       beforeUpload={beforeUpload}
       customRequest={handleCustomRequest}
       onRemove={handleRemove}
       disabled={uploading}
+      onChange={onChangeFn}
+      progress={{
+        strokeColor: {
+          "0%": "#108ee9",
+          "100%": "#87d068",
+        },
+        strokeWidth: 3,
+        format: (percent) => percent && `${parseFloat(percent.toFixed(2))}%`,
+      }}
     >
       {fileList.length < (props.maxCount || 1) &&
         (children ? children : <PlusOutlined style={{ fontSize: 30 }} />)}
