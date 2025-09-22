@@ -24,13 +24,13 @@ const Example = () => {
   // 点击确定
   const onOk = async () => {
     const res = await form.getFieldsValue(true);
-    console.log("res", res);
+    console.log("表单参数", res);
   };
 
   return (
     <>
       <Form form={form} layout="vertical">
-        <Form.Item label="图片上传" name="imageUpload">
+        <Form.Item label="图片上传（带回调和重试）" name="imageUpload">
           <OssFileUpload
             filePath="assets/images/"
             generateOss={generateOss}
@@ -38,11 +38,21 @@ const Example = () => {
             maxCount={3}
             fileTypes={["image/*"]}
             maxFileSize={5}
+            retryCount={2}
+            onProgress={(percent, file) => {
+              console.log(`${file.name} 上传进度: ${percent}%`);
+            }}
+            onSuccess={(url, file) => {
+              console.log(`${file.name} 上传成功:`, url);
+            }}
+            onError={(error, file) => {
+              console.error(`${file.name} 上传失败:`, error.message);
+            }}
           />
         </Form.Item>
 
         <Form.Item
-          label="文档上传（PDF, Word, Excel，10MB限制）"
+          label="文档上传（Excel，10MB限制，3次重试）"
           name="documentUpload"
         >
           <OssFileUpload
@@ -50,12 +60,27 @@ const Example = () => {
             generateOss={generateOss}
             listType="text"
             maxCount={5}
-            fileTypes={["application/xlsx"]}
+            fileTypes={[
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ]}
             maxFileSize={10}
+            retryCount={3}
+            onProgress={(percent, file) => {
+              console.log(`文档 ${file.name} 上传进度: ${percent}%`);
+            }}
+            onSuccess={(url, file) => {
+              console.log(`文档 ${file.name} 上传成功:`, url);
+            }}
+            onError={(error, file) => {
+              console.error(`文档 ${file.name} 上传失败:`, error.message);
+            }}
           />
         </Form.Item>
 
-        <Form.Item label="任意格式文件上传（20MB限制）" name="anyFileUpload">
+        <Form.Item
+          label="任意格式文件上传（20MB限制，不重试）"
+          name="anyFileUpload"
+        >
           <OssFileUpload
             filePath="assets/files/"
             generateOss={generateOss}
@@ -63,6 +88,16 @@ const Example = () => {
             maxCount={3}
             fileTypes={["*"]}
             maxFileSize={20}
+            retryCount={0}
+            onProgress={(percent, file) => {
+              console.log(`文件 ${file.name} 上传进度: ${percent}%`);
+            }}
+            onSuccess={(url, file) => {
+              console.log(`文件 ${file.name} 上传成功:`, url);
+            }}
+            onError={(error, file) => {
+              console.error(`文件 ${file.name} 上传失败:`, error.message);
+            }}
           />
         </Form.Item>
       </Form>

@@ -1,7 +1,7 @@
 import { message, Upload, UploadFile, UploadProps } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { RcFile } from "antd/es/upload";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface OSSResponse {
   params: {
@@ -22,7 +22,15 @@ type OssFileUploadProps = UploadProps & {
   fileTypes?: string[];
   /** 文件大小限制，单位：MB，默认5MB */
   maxFileSize?: number;
+  /** 重试次数，默认为0不重试 */
+  retryCount?: number;
   onChange?: (fileList: string[]) => void;
+  /** 上传进度回调 */
+  onProgress?: (percent: number, file: File) => void;
+  /** 上传成功回调 */
+  onSuccess?: (url: string, file: File) => void;
+  /** 上传失败回调 */
+  onError?: (error: Error, file: File) => void;
 };
 
 const OssFileUpload = ({
@@ -31,10 +39,22 @@ const OssFileUpload = ({
   generateOss,
   fileTypes = ["image/*"],
   maxFileSize = 5,
+  retryCount = 0,
+  onProgress,
+  onSuccess,
+  onError,
   ...props
 }: OssFileUploadProps) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [uploading, setUploading] = useState(false);
+
+  // 监听fileList变化，更新onChange回调
+  useEffect(() => {
+    const validUrls = fileList
+      .filter((item) => item.status === "done" && item.url)
+      .map((item) => item.url || "");
+    props?.onChange?.(validUrls);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileList]);
 
   // 检查文件类型是否匹配
   const checkFileType = (file: RcFile): boolean => {
@@ -77,56 +97,106 @@ const OssFileUpload = ({
 
   // 移除数据
   const handleRemove: UploadProps["onRemove"] = (file) => {
-    console.log("移除数据", fileList);
-    setFileList(fileList.filter((item) => item.uid !== file.uid));
-    props?.onChange?.(
-      fileList
-        .filter((item) => item.uid !== file.uid)
-        .map((item) => item.url || ""),
-    );
-  };
-
-  // 处理数据
-  const processFileList = (imgUrl: string | unknown[] | undefined) => {
-    if (typeof imgUrl === "string" && imgUrl) {
-      const name = imgUrl.split("/").pop() || "";
-      return [{ uid: imgUrl, name, url: imgUrl }];
-    }
-    return [];
+    setFileList((preList) => preList.filter((item) => item.uid !== file.uid));
   };
 
   // 自定义上传处理器
   const handleCustomRequest: UploadProps["customRequest"] = async (options) => {
+    const {
+      file,
+      onProgress: antdOnProgress,
+      onSuccess: antdOnSuccess,
+      onError: antdOnError,
+    } = options;
+    const fileObj = file as File;
+
+    const fileUid = (fileObj as RcFile).uid || `${Date.now()}-${Math.random()}`;
+
     try {
-      const { file } = options;
-      setUploading(true);
-      const urls = await onCustomRequest(file as File);
-      setUploading(false);
+      // 添加文件到列表，状态为uploading
+      const uploadingFile: UploadFile = {
+        uid: fileUid,
+        name: fileObj.name,
+        status: "uploading",
+        percent: 0,
+        originFileObj: fileObj as RcFile,
+      };
 
-      console.log(urls, "urls");
+      setFileList((preList) => [...preList, uploadingFile]);
 
-      if (urls) {
-        setFileList((preList) => [...preList, ...processFileList(urls)]);
-        props?.onChange?.(
-          [...fileList, ...processFileList(urls)].map((item) => item.url || ""),
+      // 初始进度
+      antdOnProgress?.({ percent: 10 });
+      onProgress?.(10, fileObj);
+
+      // 更新进度
+      setFileList((preList) =>
+        preList.map((item) =>
+          item.uid === fileUid ? { ...item, percent: 10 } : item,
+        ),
+      );
+
+      const uploadedUrl = await onCustomRequest(fileObj);
+
+      console.log(uploadedUrl, "uploadedUrl");
+
+      // 完成进度
+      antdOnProgress?.({ percent: 100 });
+      onProgress?.(100, fileObj);
+
+      // 更新文件状态为done
+      setFileList((preList) =>
+        preList.map((item) =>
+          item.uid === fileUid
+            ? { ...item, status: "done", percent: 100, url: uploadedUrl }
+            : item,
+        ),
+      );
+
+      // 成功回调
+      antdOnSuccess?.(uploadedUrl);
+      onSuccess?.(uploadedUrl, fileObj);
+
+      // 更新文件状态为done
+      setFileList((currentList) => {
+        return currentList.map((item) =>
+          item.uid === fileUid
+            ? {
+                ...item,
+                status: "done" as const,
+                percent: 100,
+                url: uploadedUrl,
+              }
+            : item,
         );
-      }
+      });
     } catch (error) {
-      message.error("图片上传失败");
-      options.onError?.(error as Error);
-      setUploading(false);
+      const errorObj = error as Error;
+
+      // 更新文件状态为error
+      setFileList((preList) =>
+        preList.map((item) =>
+          item.uid === fileUid
+            ? { ...item, status: "error", percent: 0 }
+            : item,
+        ),
+      );
+
+      // 错误回调
+      message.error(errorObj.message || "文件上传失败");
+      antdOnError?.(errorObj);
+      onError?.(errorObj, fileObj);
     }
   };
 
-  const onCustomRequest = async (fileUrlInfo: File) => {
-    let fileUrl: string = "";
-
+  const onCustomRequest = async (
+    fileUrlInfo: File,
+    currentRetry = 0,
+  ): Promise<string> => {
     try {
       const res = await generateOss();
-
       const { policy, signature, accessid, host } = res.params;
-
       const name = fileUrlInfo.name;
+
       const formData = new FormData();
       formData.append("policy", policy);
       formData.append("signature", signature);
@@ -134,40 +204,48 @@ const OssFileUpload = ({
       formData.append("key", filePath + name);
       formData.append("success_action_status", "200");
       formData.append("file", fileUrlInfo);
+
       const param = {
         method: "POST",
         body: formData,
       };
 
       await fetch(host, param);
-      fileUrl = host + "/" + filePath + name;
+      const fileUrl = host + "/" + filePath + name;
+      return fileUrl;
     } catch (error) {
       console.log(error, "error");
-      throw new Error("上传失败");
-    }
 
-    return fileUrl;
+      // 如果还有重试次数，则重试
+      if (currentRetry < retryCount) {
+        console.log(`上传失败，正在重试 ${currentRetry + 1}/${retryCount}`);
+        return onCustomRequest(fileUrlInfo, currentRetry + 1);
+      }
+
+      // 重试次数用完，抛出错误
+      throw new Error(`上传失败，已重试${retryCount}次`);
+    }
   };
 
   const onChangeFn: UploadProps["onChange"] = (info) => {
-    console.log(info, "info");
+    // 不做任何处理，info需要被调用，否则会报错，但是不使用info
+    console.log(info, "onChange");
   };
 
   return (
     <Upload
       {...props}
-      fileList={fileList.length ? fileList : undefined}
+      fileList={fileList}
       beforeUpload={beforeUpload}
       customRequest={handleCustomRequest}
       onRemove={handleRemove}
-      disabled={uploading}
       onChange={onChangeFn}
       progress={{
         strokeColor: {
           "0%": "#108ee9",
           "100%": "#87d068",
         },
-        strokeWidth: 3,
+        size: 3,
         format: (percent) => percent && `${parseFloat(percent.toFixed(2))}%`,
       }}
     >
