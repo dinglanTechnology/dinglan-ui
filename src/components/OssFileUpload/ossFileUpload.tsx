@@ -1,7 +1,7 @@
 import { message, Upload, UploadFile, UploadProps, Image } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { RcFile } from "antd/es/upload";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export interface OSSResponse {
   params: {
@@ -28,6 +28,8 @@ type OssFileUploadProps = UploadProps & {
   retryCount?: number;
   /** 自定义进度条样式 */
   progress?: UploadProps["progress"];
+  /** 组件值，用于Form集成 */
+  value?: string[];
   onChange?: (fileList: string[]) => void;
   /** 上传进度回调 */
   onProgress?: (percent: number, file: File) => void;
@@ -46,6 +48,7 @@ const OssFileUpload = ({
   maxFileSize = 5,
   retryCount = 0,
   progress,
+  value,
   onProgress,
   onSuccess,
   onError,
@@ -55,12 +58,47 @@ const OssFileUpload = ({
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [uploadCounter, setUploadCounter] = useState(0);
+  const isInternalUpdate = useRef(false);
+
+  // 将URL数组转换为UploadFile格式
+  const urlsToFileList = (urls: string[]): UploadFile[] => {
+    return urls.map((url, index) => {
+      const fileName = url.split("/").pop() || `file-${index + 1}`;
+      return {
+        uid: `${url}-${index}`,
+        name: fileName,
+        status: "done",
+        url: url,
+      };
+    });
+  };
+
+  // 监听value变化，更新fileList（用于初始值和外部控制）
+  useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+
+    if (value && Array.isArray(value) && value.length > 0) {
+      const newFileList = urlsToFileList(value);
+      setFileList(newFileList);
+    } else if (
+      value === undefined ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
+      setFileList([]);
+    }
+  }, [value]);
 
   // 监听fileList变化，更新onChange回调
   useEffect(() => {
     const validUrls = fileList
       .filter((item) => item.status === "done" && item.url)
       .map((item) => item.url || "");
+
+    // 标记为内部更新，避免循环
+    isInternalUpdate.current = true;
     props?.onChange?.(validUrls);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileList]);
@@ -247,7 +285,7 @@ const OssFileUpload = ({
           item.uid === fileUid
             ? {
                 ...item,
-                status: "done" as const,
+                status: "done",
                 percent: 100,
                 url: uploadedUrl,
               }

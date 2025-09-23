@@ -65,6 +65,7 @@ const Example = () => {
 
 ### 可选参数
 
+- **value** _`string[]`_ - 组件值，用于Form集成和显示初始值
 - **fileName** _`string[]`_ - 自定义文件名数组，按上传顺序使用
 - **fileTypes** _`string[]`_ - 支持的文件格式，默认 `["image/*"]`
 - **maxFileSize** _`number`_ - 文件大小限制，单位MB，默认5MB
@@ -259,6 +260,45 @@ fileName={["custom-1", "custom-2.jpg", "custom-3"]}
     generateOss={generateOss}
   />
 </Form.Item>
+```
+
+### 设置初始值
+
+支持通过Form的initialValues设置初始文件：
+
+```typescript
+<Form
+  initialValues={{
+    fileUpload: [
+      "https://example.com/file1.jpg",
+      "https://example.com/file2.png"
+    ]
+  }}
+>
+  <Form.Item name="fileUpload" label="文件上传">
+    <OssFileUpload
+      filePath="uploads/"
+      generateOss={generateOss}
+    />
+  </Form.Item>
+</Form>
+```
+
+### 受控组件
+
+也可以作为受控组件使用：
+
+```typescript
+const [fileUrls, setFileUrls] = useState([
+  "https://example.com/file1.jpg"
+]);
+
+<OssFileUpload
+  filePath="uploads/"
+  generateOss={generateOss}
+  value={fileUrls}
+  onChange={setFileUrls}
+/>
 ```
 
 组件会自动将上传成功的文件URL数组作为表单值。

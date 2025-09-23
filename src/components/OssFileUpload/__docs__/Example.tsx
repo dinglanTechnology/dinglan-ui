@@ -29,7 +29,15 @@ const Example = () => {
 
   return (
     <>
-      <Form form={form} layout="vertical">
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{
+          imageUpload: [
+            "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com/assets/images/custom-image-1.jpg",
+          ],
+        }}
+      >
         <Form.Item label="图片上传" name="imageUpload">
           <OssFileUpload
             filePath="assets/images/"
@@ -57,7 +65,6 @@ const Example = () => {
             filePath="assets/documents/"
             generateOss={generateOss}
             listType="text"
-            maxCount={5}
             fileTypes={[
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             ]}
