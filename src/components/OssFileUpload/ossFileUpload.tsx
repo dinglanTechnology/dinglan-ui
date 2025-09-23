@@ -278,20 +278,6 @@ const OssFileUpload = ({
       // 成功回调
       antdOnSuccess?.(uploadedUrl);
       onSuccess?.(uploadedUrl, fileObj);
-
-      // 更新文件状态为done
-      setFileList((currentList) => {
-        return currentList.map((item) =>
-          item.uid === fileUid
-            ? {
-                ...item,
-                status: "done",
-                percent: 100,
-                url: uploadedUrl,
-              }
-            : item,
-        );
-      });
     } catch (error) {
       const errorObj = error as Error;
 
