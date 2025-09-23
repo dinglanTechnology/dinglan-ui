@@ -6,7 +6,7 @@ import * as OssFileUpload from "./OssFileUpload.stories.tsx";
 
 # OssFileUpload
 
-OSS文件上传组件，基于 Ant Design Upload 组件封装，专门用于阿里云OSS文件上传。支持多文件上传、自定义文件名、进度显示、重试机制、图片预览等功能。
+OSS文件上传组件，基于 Ant Design Upload 组件封装，专门用于阿里云OSS文件上传。支持多文件上传、自定义文件名、进度显示、重试机制、图片预览、初始值显示等功能，完美集成Ant Design Form。
 
 #### Example
 
@@ -16,7 +16,7 @@ OSS文件上传组件，基于 Ant Design Upload 组件封装，专门用于阿�
 
 ```ts
 import { OssFileUpload } from "dinglan-ui";
-import { Form } from "antd";
+import { Form, Button } from "antd";
 
 const Example = () => {
   const [form] = Form.useForm();
@@ -35,22 +35,46 @@ const Example = () => {
     };
   };
 
+  const onSubmit = async () => {
+    const values = await form.getFieldsValue();
+    console.log("表单数据:", values);
+  };
+
   return (
-    <Form form={form}>
-      <Form.Item label="文件上传" name="fileUpload">
+    <Form 
+      form={form}
+      layout="vertical"
+      initialValues={{
+        imageUpload: [
+          "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com/assets/images/example.jpg"
+        ]
+      }}
+    >
+      <Form.Item label="图片上传" name="imageUpload">
         <OssFileUpload
-          filePath="assets/uploads/"
+          filePath="assets/images/"
           generateOss={generateOss}
           listType="picture-card"
           maxCount={3}
           fileTypes={["image/*"]}
+          fileName={["custom-1", "custom-2", "custom-3"]}
           maxFileSize={5}
           retryCount={2}
+          onProgress={(percent, file) => {
+            console.log(`${file.name} 上传进度: ${percent}%`);
+          }}
           onSuccess={(url, file) => {
             console.log(`${file.name} 上传成功:`, url);
           }}
+          onError={(error, file) => {
+            console.error(`${file.name} 上传失败:`, error.message);
+          }}
         />
       </Form.Item>
+      
+      <Button type="primary" onClick={onSubmit}>
+        提交
+      </Button>
     </Form>
   );
 };
@@ -105,6 +129,7 @@ interface OSSResponse {
 - **格式限制**：可配置支持的文件格式
 - **大小限制**：可设置文件大小上限
 - **自定义命名**：支持按数组顺序自定义文件名
+- **初始值显示**：支持Form初始值和受控组件模式
 
 ### 🔄 重试机制
 - **智能重试**：上传失败时自动重试
@@ -120,21 +145,41 @@ interface OSSResponse {
 - **实时进度**：显示上传进度条
 - **自定义样式**：可配置进度条颜色、大小等
 - **状态管理**：uploading、done、error状态
+- **多文件支持**：每个文件独立显示进度
+
+### 🔧 Form集成
+- **完美集成**：与Ant Design Form无缝集成
+- **初始值支持**：自动显示Form的initialValues
+- **受控组件**：支持value/onChange模式
+- **防闪烁优化**：避免状态更新导致的组件闪烁
 
 ## 使用场景
 
-### 1. **图片上传**
+### 1. **图片上传（带初始值）**
 ```typescript
-<OssFileUpload
-  filePath="images/"
-  generateOss={generateOss}
-  listType="picture-card"
-  fileTypes={["image/*"]}
-  maxFileSize={5}
-/>
+<Form
+  initialValues={{
+    imageUpload: [
+      "https://example.com/image1.jpg",
+      "https://example.com/image2.png"
+    ]
+  }}
+>
+  <Form.Item name="imageUpload" label="图片上传">
+    <OssFileUpload
+      filePath="images/"
+      generateOss={generateOss}
+      listType="picture-card"
+      fileTypes={["image/*"]}
+      maxFileSize={5}
+      maxCount={3}
+      fileName={["photo-1", "photo-2", "photo-3"]}
+    />
+  </Form.Item>
+</Form>
 ```
 
-### 2. **文档上传**
+### 2. **文档上传（带重试和进度条）**
 ```typescript
 <OssFileUpload
   filePath="documents/"
@@ -142,34 +187,58 @@ interface OSSResponse {
   listType="text"
   fileTypes={[
     "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   ]}
   maxFileSize={10}
-/>
+  retryCount={3}
+  progress={{
+    strokeColor: "#1890ff",
+    size: 8,
+    showInfo: true,
+    format: (percent) => `${percent}%`,
+  }}
+  onProgress={(percent, file) => {
+    console.log(`${file.name} 上传进度: ${percent}%`);
+  }}
+  onError={(error, file) => {
+    console.error(`${file.name} 上传失败:`, error.message);
+  }}
+>
+  <Button>选择文件</Button>
+</OssFileUpload>
 ```
 
-### 3. **自定义文件名**
+### 3. **受控组件模式**
 ```typescript
+const [fileUrls, setFileUrls] = useState([
+  "https://example.com/existing-file.pdf"
+]);
+
 <OssFileUpload
   filePath="assets/"
   generateOss={generateOss}
-  fileName={["file-1", "file-2", "file-3"]}
+  value={fileUrls}
+  onChange={setFileUrls}
+  fileName={["report-1", "report-2", "report-3"]}
   maxCount={3}
+  fileTypes={["*"]}
+  maxFileSize={20}
 />
 ```
 
-### 4. **自定义进度条**
+### 4. **任意格式文件上传**
 ```typescript
 <OssFileUpload
-  filePath="uploads/"
+  filePath="files/"
   generateOss={generateOss}
-  progress={{
-    strokeColor: {
-      "0%": "#ff4d4f",
-      "100%": "#52c41a",
-    },
-    size: 5,
-    format: (percent) => `${percent}%`,
+  listType="text"
+  fileTypes={["*"]} // 支持所有格式
+  maxFileSize={50}
+  maxCount={5}
+  retryCount={0} // 不重试
+  onSuccess={(url, file) => {
+    console.log(`文件上传成功: ${file.name} -> ${url}`);
   }}
 />
 ```
@@ -222,6 +291,7 @@ fileName={["custom-1", "custom-2.jpg", "custom-3"]}
 - 大文件上传建议设置合适的重试次数
 - 多文件上传时注意并发数量
 - 可通过 `maxCount` 限制同时上传的文件数量
+- 组件内部已优化防闪烁机制，避免不必要的重渲染
 
 ### 错误处理
 - 监听 `onError` 回调处理上传失败
@@ -264,14 +334,14 @@ fileName={["custom-1", "custom-2.jpg", "custom-3"]}
 
 ### 设置初始值
 
-支持通过Form的initialValues设置初始文件：
+支持通过Form的initialValues设置初始文件，组件会自动显示已有文件：
 
 ```typescript
 <Form
   initialValues={{
     fileUpload: [
-      "https://example.com/file1.jpg",
-      "https://example.com/file2.png"
+      "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com/assets/images/photo1.jpg",
+      "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com/assets/documents/report.pdf"
     ]
   }}
 >
@@ -279,10 +349,19 @@ fileName={["custom-1", "custom-2.jpg", "custom-3"]}
     <OssFileUpload
       filePath="uploads/"
       generateOss={generateOss}
+      maxCount={5}
+      fileTypes={["*"]}
     />
   </Form.Item>
 </Form>
 ```
+
+**特性说明：**
+- ✅ 自动从URL提取文件名显示
+- ✅ 支持图片预览功能
+- ✅ 支持文件删除操作
+- ✅ 防闪烁优化，稳定显示
+- ✅ 与新上传文件无缝集成
 
 ### 受控组件
 

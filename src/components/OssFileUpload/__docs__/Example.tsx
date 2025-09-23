@@ -60,7 +60,10 @@ const Example = () => {
           />
         </Form.Item>
 
-        <Form.Item label="文档上传（圆形进度条样式）" name="documentUpload">
+        <Form.Item
+          label="excel文档上传（圆形进度条样式）"
+          name="documentUpload"
+        >
           <OssFileUpload
             filePath="assets/documents/"
             generateOss={generateOss}
