@@ -30,7 +30,7 @@ const Example = () => {
   return (
     <>
       <Form form={form} layout="vertical">
-        <Form.Item label="图片上传（支持自定义文件名数组）" name="imageUpload">
+        <Form.Item label="图片上传" name="imageUpload">
           <OssFileUpload
             filePath="assets/images/"
             generateOss={generateOss}
@@ -52,10 +52,7 @@ const Example = () => {
           />
         </Form.Item>
 
-        <Form.Item
-          label="文档上传（自定义文件名，超出数组长度使用原名）"
-          name="documentUpload"
-        >
+        <Form.Item label="文档上传（圆形进度条样式）" name="documentUpload">
           <OssFileUpload
             filePath="assets/documents/"
             generateOss={generateOss}
@@ -67,6 +64,12 @@ const Example = () => {
             fileName={["report-1", "report-2"]}
             maxFileSize={10}
             retryCount={3}
+            progress={{
+              strokeColor: "#1890ff",
+              size: 8,
+              showInfo: true,
+              format: (percent) => `${percent}%`,
+            }}
             onProgress={(percent, file) => {
               console.log(`文档 ${file.name} 上传进度: ${percent}%`);
             }}

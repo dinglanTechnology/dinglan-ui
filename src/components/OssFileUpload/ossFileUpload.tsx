@@ -26,6 +26,8 @@ type OssFileUploadProps = UploadProps & {
   maxFileSize?: number;
   /** 重试次数，默认为0不重试 */
   retryCount?: number;
+  /** 自定义进度条样式 */
+  progress?: UploadProps["progress"];
   onChange?: (fileList: string[]) => void;
   /** 上传进度回调 */
   onProgress?: (percent: number, file: File) => void;
@@ -43,6 +45,7 @@ const OssFileUpload = ({
   fileTypes = ["image/*"],
   maxFileSize = 5,
   retryCount = 0,
+  progress,
   onProgress,
   onSuccess,
   onError,
@@ -339,14 +342,7 @@ const OssFileUpload = ({
         onRemove={handleRemove}
         onPreview={handlePreview}
         onChange={onChangeFn}
-        progress={{
-          strokeColor: {
-            "0%": "#108ee9",
-            "100%": "#87d068",
-          },
-          size: 3,
-          format: (percent) => percent && `${parseFloat(percent.toFixed(2))}%`,
-        }}
+        progress={progress || {}}
       >
         {fileList.length < (props.maxCount || 1) &&
           (children ? children : <PlusOutlined style={{ fontSize: 30 }} />)}
