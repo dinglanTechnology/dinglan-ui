@@ -10,10 +10,10 @@ const Example = () => {
 
     return Promise.resolve({
       params: {
-        expire: "1758590879",
+        expire: "1758678719",
         policy:
-          "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0yM1QwMToyNzo1OS42NDZaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
-        signature: "",
+          "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0yNFQwMTo1MTo1OS4zNzRaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
+        signature: "EZdtdojCQWI5/Ex+l8HnQezGrBg=",
         accessid: "LTAI5tMCpHgpcdTpEMUXaoZQ",
         host: "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com",
         bucket: "assets-resource-1",
@@ -30,16 +30,14 @@ const Example = () => {
   return (
     <>
       <Form form={form} layout="vertical">
-        <Form.Item
-          label="图片上传（支持Image预览、回调和重试）"
-          name="imageUpload"
-        >
+        <Form.Item label="图片上传（支持自定义文件名数组）" name="imageUpload">
           <OssFileUpload
             filePath="assets/images/"
             generateOss={generateOss}
             listType="picture-card"
             maxCount={3}
             fileTypes={["image/*"]}
+            fileName={["custom-image-1", "custom-image-2", "custom-image-3"]}
             maxFileSize={5}
             retryCount={2}
             onProgress={(percent, file) => {
@@ -55,7 +53,7 @@ const Example = () => {
         </Form.Item>
 
         <Form.Item
-          label="文档上传（Excel，点击预览下载，3次重试）"
+          label="文档上传（自定义文件名，超出数组长度使用原名）"
           name="documentUpload"
         >
           <OssFileUpload
@@ -66,6 +64,7 @@ const Example = () => {
             fileTypes={[
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             ]}
+            fileName={["report-1", "report-2"]}
             maxFileSize={10}
             retryCount={3}
             onProgress={(percent, file) => {
@@ -77,7 +76,9 @@ const Example = () => {
             onError={(error, file) => {
               console.error(`文档 ${file.name} 上传失败:`, error.message);
             }}
-          />
+          >
+            <Button>上传</Button>
+          </OssFileUpload>
         </Form.Item>
 
         <Form.Item

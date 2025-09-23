@@ -18,8 +18,8 @@ type OssFileUploadProps = UploadProps & {
   children?: React.ReactNode;
   filePath: string;
   generateOss: () => Promise<OSSResponse>;
-  /** 重命名文件名称 */
-  fileName?: string;
+  /** 重命名文件名称数组，按上传顺序使用 */
+  fileName?: string[];
   /** 支持的文件格式 */
   fileTypes?: string[];
   /** 文件大小限制，单位：MB，默认5MB */
@@ -51,6 +51,7 @@ const OssFileUpload = ({
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
+  const [uploadCounter, setUploadCounter] = useState(0);
 
   // 监听fileList变化，更新onChange回调
   useEffect(() => {
@@ -98,6 +99,38 @@ const OssFileUpload = ({
     }
 
     return true;
+  };
+
+  // 获取文件扩展名
+  const getFileExtension = (filename: string): string => {
+    const lastDotIndex = filename.lastIndexOf(".");
+    return lastDotIndex !== -1 ? filename.substring(lastDotIndex) : "";
+  };
+
+  // 获取当前上传文件应该使用的文件名
+  const getCurrentFileName = (
+    originalName: string,
+    currentIndex: number,
+  ): string => {
+    if (!fileName || fileName.length === 0) {
+      return originalName;
+    }
+
+    // 如果数组长度不够，使用原文件名
+    if (currentIndex >= fileName.length) {
+      return originalName;
+    }
+
+    const customName = fileName[currentIndex];
+    const extension = getFileExtension(originalName);
+
+    // 如果自定义名称已经包含扩展名，直接使用
+    if (customName.includes(".")) {
+      return customName;
+    }
+
+    // 否则添加原文件的扩展名
+    return customName + extension;
   };
 
   // 检查是否为图片类型
@@ -154,11 +187,18 @@ const OssFileUpload = ({
 
     const fileUid = (fileObj as RcFile).uid || `${Date.now()}-${Math.random()}`;
 
+    // 获取当前上传索引并递增计数器
+    const currentUploadIndex = uploadCounter;
+    setUploadCounter((prev) => prev + 1);
+
+    // 获取应该使用的文件名
+    const finalFileName = getCurrentFileName(fileObj.name, currentUploadIndex);
+
     try {
       // 添加文件到列表，状态为uploading
       const uploadingFile: UploadFile = {
         uid: fileUid,
-        name: fileName || fileObj.name,
+        name: finalFileName,
         status: "uploading",
         percent: 0,
         originFileObj: fileObj as RcFile,
@@ -177,7 +217,7 @@ const OssFileUpload = ({
         ),
       );
 
-      const uploadedUrl = await onCustomRequest(fileObj);
+      const uploadedUrl = await onCustomRequest(fileObj, finalFileName);
 
       console.log(uploadedUrl, "uploadedUrl");
 
@@ -214,14 +254,8 @@ const OssFileUpload = ({
     } catch (error) {
       const errorObj = error as Error;
 
-      // 更新文件状态为error
-      setFileList((preList) =>
-        preList.map((item) =>
-          item.uid === fileUid
-            ? { ...item, status: "error", percent: 0 }
-            : item,
-        ),
-      );
+      // 上传失败后从fileList中移除该文件
+      setFileList((preList) => preList.filter((item) => item.uid !== fileUid));
 
       // 错误回调
       message.error(errorObj.message || "文件上传失败");
@@ -232,12 +266,13 @@ const OssFileUpload = ({
 
   const onCustomRequest = async (
     fileUrlInfo: File,
+    customFileName: string,
     currentRetry = 0,
   ): Promise<string> => {
     try {
       const res = await generateOss();
       const { policy, signature, accessid, host } = res.params;
-      const name = fileName || fileUrlInfo.name;
+      const name = customFileName;
 
       const formData = new FormData();
       formData.append("policy", policy);
@@ -279,7 +314,7 @@ const OssFileUpload = ({
       // 如果还有重试次数，则重试
       if (currentRetry < retryCount) {
         console.log(`上传失败，正在重试 ${currentRetry + 1}/${retryCount}`);
-        return onCustomRequest(fileUrlInfo, currentRetry + 1);
+        return onCustomRequest(fileUrlInfo, customFileName, currentRetry + 1);
       }
 
       // 重试次数用完，抛出错误
