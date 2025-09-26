@@ -10,10 +10,10 @@ const Example = () => {
 
     return Promise.resolve({
       params: {
-        expire: "1758678719",
+        expire: "1758936168",
         policy:
-          "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0yNFQwMTo1MTo1OS4zNzRaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
-        signature: "EZdtdojCQWI5/Ex+l8HnQezGrBg=",
+          "eyJleHBpcmF0aW9uIjoiMjAyNS0wOS0yN1QwMToyMjo0OC4xMDdaIiwiY29uZGl0aW9ucyI6W1siY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjAwMF1dfQ==",
+        signature: "qXm7+JfTfRvV1yJmi0u1Lpj1/0Q=",
         accessid: "LTAI5tMCpHgpcdTpEMUXaoZQ",
         host: "https://assets-resource-1.oss-cn-chengdu.aliyuncs.com",
         bucket: "assets-resource-1",
@@ -57,6 +57,7 @@ const Example = () => {
             onError={(error, file) => {
               console.error(`${file.name} 上传失败:`, error.message);
             }}
+            appendTimestamp
           />
         </Form.Item>
 

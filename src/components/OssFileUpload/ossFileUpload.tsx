@@ -14,29 +14,38 @@ export interface OSSResponse {
   };
 }
 
+/**
+ * 组件Props
+ * @param children 自定义上传按钮内容
+ * @param filePath OSS存储路径，文件将上传到此路径下
+ * @param generateOss 获取OSS配置的异步函数
+ * @param fileName 重命名文件名称数组，按上传顺序使用
+ * @param fileTypes 支持的文件格式
+ * @param maxFileSize 文件大小限制，单位：MB，默认5MB
+ * @param retryCount 重试次数，默认为0不重试
+ * @param progress 自定义进度条样式
+ * @param value 组件值，用于Form集成
+ * @param onChange 文件列表变化回调
+ * @param onProgress 上传进度回调
+ * @param onSuccess 上传成功回调
+ * @param onError 上传失败回调
+ * @param appendTimestamp 是否在文件名后拼接时间戳，默认false
+ */
 type OssFileUploadProps = UploadProps & {
   children?: React.ReactNode;
   filePath: string;
   generateOss: () => Promise<OSSResponse>;
-  /** 重命名文件名称数组，按上传顺序使用 */
   fileName?: string[];
-  /** 支持的文件格式 */
   fileTypes?: string[];
-  /** 文件大小限制，单位：MB，默认5MB */
   maxFileSize?: number;
-  /** 重试次数，默认为0不重试 */
   retryCount?: number;
-  /** 自定义进度条样式 */
   progress?: UploadProps["progress"];
-  /** 组件值，用于Form集成 */
   value?: string[];
   onChange?: (fileList: string[]) => void;
-  /** 上传进度回调 */
   onProgress?: (percent: number, file: File) => void;
-  /** 上传成功回调 */
   onSuccess?: (url: string, file: File) => void;
-  /** 上传失败回调 */
   onError?: (error: Error, file: File) => void;
+  appendTimestamp?: boolean;
 };
 
 const OssFileUpload = ({
@@ -52,6 +61,7 @@ const OssFileUpload = ({
   onProgress,
   onSuccess,
   onError,
+  appendTimestamp = false,
   ...props
 }: OssFileUploadProps) => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -148,6 +158,18 @@ const OssFileUpload = ({
     return lastDotIndex !== -1 ? filename.substring(lastDotIndex) : "";
   };
 
+  // 生成时间戳（格式：YYYYMMDDhhmmss）
+  const generateTimestamp = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
+    return `${year}${month}${day}${hours}${minutes}${seconds}`;
+  };
+
   // 获取当前上传文件应该使用的文件名
   const getCurrentFileName = (
     originalName: string,
@@ -162,7 +184,14 @@ const OssFileUpload = ({
       return originalName;
     }
 
-    const customName = fileName[currentIndex];
+    let customName = fileName[currentIndex];
+
+    // 如果需要拼接时间戳，在customName后添加时间戳
+    if (appendTimestamp) {
+      const timestamp = generateTimestamp();
+      customName = customName + timestamp;
+    }
+
     const extension = getFileExtension(originalName);
 
     // 如果自定义名称已经包含扩展名，直接使用
