@@ -1,0 +1,423 @@
+import { message, Upload, UploadFile, UploadProps, Image } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { RcFile } from "antd/es/upload";
+import { useEffect, useState, useRef } from "react";
+
+export interface OSSResponse {
+  params: {
+    expire: string;
+    policy: string;
+    signature: string;
+    accessid: string;
+    host: string;
+    bucket: string;
+  };
+}
+
+/**
+ * 组件Props
+ * @param children 自定义上传按钮内容
+ * @param filePath OSS存储路径，文件将上传到此路径下
+ * @param generateOss 获取OSS配置的异步函数
+ * @param fileName 重命名文件名称数组，按上传顺序使用
+ * @param fileTypes 支持的文件格式
+ * @param maxFileSize 文件大小限制，单位：MB，默认5MB
+ * @param retryCount 重试次数，默认为0不重试
+ * @param progress 自定义进度条样式
+ * @param value 组件值，用于Form集成
+ * @param onChange 文件列表变化回调
+ * @param onProgress 上传进度回调
+ * @param onSuccess 上传成功回调
+ * @param onError 上传失败回调
+ * @param appendTimestamp 是否在文件名后拼接时间戳，默认false
+ */
+type OssFileUploadProps = UploadProps & {
+  children?: React.ReactNode;
+  filePath: string;
+  generateOss: () => Promise<OSSResponse>;
+  fileName?: string[];
+  fileTypes?: string[];
+  maxFileSize?: number;
+  retryCount?: number;
+  progress?: UploadProps["progress"];
+  value?: string[];
+  onChange?: (fileList: string[]) => void;
+  onProgress?: (percent: number, file: File) => void;
+  onSuccess?: (url: string, file: File) => void;
+  onError?: (error: Error, file: File) => void;
+  appendTimestamp?: boolean;
+};
+
+const OssFileUpload = ({
+  children,
+  filePath,
+  generateOss,
+  fileName,
+  fileTypes = ["image/*"],
+  maxFileSize = 5,
+  retryCount = 0,
+  progress,
+  value,
+  onProgress,
+  onSuccess,
+  onError,
+  appendTimestamp = false,
+  ...props
+}: OssFileUploadProps) => {
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewImage, setPreviewImage] = useState("");
+  const [uploadCounter, setUploadCounter] = useState(0);
+  const isInternalUpdate = useRef(false);
+
+  // 将URL数组转换为UploadFile格式
+  const urlsToFileList = (urls: string[]): UploadFile[] => {
+    return urls.map((url, index) => {
+      const fileName = url.split("/").pop() || `file-${index + 1}`;
+      return {
+        uid: `${url}-${index}`,
+        name: fileName,
+        status: "done",
+        url: url,
+      };
+    });
+  };
+
+  // 监听value变化，更新fileList（用于初始值和外部控制）
+  useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+
+    if (value && Array.isArray(value) && value.length > 0) {
+      const newFileList = urlsToFileList(value);
+      setFileList(newFileList);
+    } else if (
+      value === undefined ||
+      (Array.isArray(value) && value.length === 0)
+    ) {
+      setFileList([]);
+    }
+  }, [value]);
+
+  // 监听fileList变化，更新onChange回调
+  useEffect(() => {
+    const validUrls = fileList
+      .filter((item) => item.status === "done" && item.url)
+      .map((item) => item.url || "");
+
+    // 标记为内部更新，避免循环
+    isInternalUpdate.current = true;
+    props?.onChange?.(validUrls);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileList]);
+
+  // 检查文件类型是否匹配
+  const checkFileType = (file: RcFile): boolean => {
+    // 如果包含 '*' 表示支持所有格式
+    if (fileTypes.includes("*")) {
+      return true;
+    }
+
+    // 检查是否匹配任一支持的格式
+    return fileTypes.some((type) => {
+      if (type.endsWith("/*")) {
+        // 处理通配符格式，如 'image/*'
+        const prefix = type.slice(0, -2);
+        return file.type.startsWith(prefix + "/");
+      } else {
+        // 精确匹配，如 'image/jpeg'
+        return file.type === type;
+      }
+    });
+  };
+
+  // 上传前校验
+  const beforeUpload = (file: RcFile) => {
+    // 检查文件格式
+    if (!checkFileType(file)) {
+      const supportedFormats = fileTypes.join(", ");
+      message.error(`仅支持以下格式的文件: ${supportedFormats}`);
+      return Upload.LIST_IGNORE;
+    }
+
+    // 检查文件大小
+    const maxSizeInBytes = maxFileSize * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      message.error(`文件大小不能超过${maxFileSize}MB!`);
+      return Upload.LIST_IGNORE;
+    }
+
+    return true;
+  };
+
+  // 获取文件扩展名
+  const getFileExtension = (filename: string): string => {
+    const lastDotIndex = filename.lastIndexOf(".");
+    return lastDotIndex !== -1 ? filename.substring(lastDotIndex) : "";
+  };
+
+  // 生成时间戳（格式：YYYYMMDDhhmmss）
+  const generateTimestamp = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
+    return `${year}${month}${day}${hours}${minutes}${seconds}`;
+  };
+
+  // 获取当前上传文件应该使用的文件名
+  const getCurrentFileName = (
+    originalName: string,
+    currentIndex: number,
+  ): string => {
+    if (!fileName || fileName.length === 0) {
+      return originalName;
+    }
+
+    // 如果数组长度不够，使用原文件名
+    if (currentIndex >= fileName.length) {
+      return originalName;
+    }
+
+    let customName = fileName[currentIndex];
+
+    // 如果需要拼接时间戳，在customName后添加时间戳
+    if (appendTimestamp) {
+      const timestamp = generateTimestamp();
+      customName = customName + timestamp;
+    }
+
+    const extension = getFileExtension(originalName);
+
+    // 如果自定义名称已经包含扩展名，直接使用
+    if (customName.includes(".")) {
+      return customName;
+    }
+
+    // 否则添加原文件的扩展名
+    return customName + extension;
+  };
+
+  // 检查是否为图片类型
+  const isImageFile = (file: UploadFile): boolean => {
+    const imageTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/bmp",
+      "image/webp",
+      "image/svg+xml",
+    ];
+    return imageTypes.some(
+      (type) =>
+        file.type === type ||
+        file.name?.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i),
+    );
+  };
+
+  // 移除数据
+  const handleRemove: UploadProps["onRemove"] = (file) => {
+    setFileList((preList) => preList.filter((item) => item.uid !== file.uid));
+  };
+
+  // 处理预览
+  const handlePreview = async (file: UploadFile) => {
+    // 如果是图片类型，使用Image组件预览
+    if (isImageFile(file)) {
+      setPreviewImage(file.url || file.thumbUrl || "");
+      setPreviewVisible(true);
+    } else {
+      // 非图片类型，直接下载
+      if (file.url) {
+        const link = document.createElement("a");
+        link.href = file.url;
+        link.download = file.name || "download";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  };
+
+  // 自定义上传处理器
+  const handleCustomRequest: UploadProps["customRequest"] = async (options) => {
+    const {
+      file,
+      onProgress: antdOnProgress,
+      onSuccess: antdOnSuccess,
+      onError: antdOnError,
+    } = options;
+    const fileObj = file as File;
+
+    const fileUid = (fileObj as RcFile).uid || `${Date.now()}-${Math.random()}`;
+
+    // 获取当前上传索引并递增计数器
+    const currentUploadIndex = uploadCounter;
+    setUploadCounter((prev) => prev + 1);
+
+    // 获取应该使用的文件名
+    const finalFileName = getCurrentFileName(fileObj.name, currentUploadIndex);
+
+    try {
+      // 添加文件到列表，状态为uploading
+      const uploadingFile: UploadFile = {
+        uid: fileUid,
+        name: finalFileName,
+        status: "uploading",
+        percent: 0,
+        originFileObj: fileObj as RcFile,
+      };
+
+      setFileList((preList) => [...preList, uploadingFile]);
+
+      // 初始进度
+      antdOnProgress?.({ percent: 10 });
+      onProgress?.(10, fileObj);
+
+      // 更新进度
+      setFileList((preList) =>
+        preList.map((item) =>
+          item.uid === fileUid ? { ...item, percent: 10 } : item,
+        ),
+      );
+
+      const uploadedUrl = await onCustomRequest(fileObj, finalFileName);
+
+      console.log(uploadedUrl, "uploadedUrl");
+
+      // 完成进度
+      antdOnProgress?.({ percent: 100 });
+      onProgress?.(100, fileObj);
+
+      // 更新文件状态为done
+      setFileList((preList) =>
+        preList.map((item) =>
+          item.uid === fileUid
+            ? { ...item, status: "done", percent: 100, url: uploadedUrl }
+            : item,
+        ),
+      );
+
+      // 成功回调
+      antdOnSuccess?.(uploadedUrl);
+      onSuccess?.(uploadedUrl, fileObj);
+    } catch (error) {
+      const errorObj = error as Error;
+
+      // 上传失败后从fileList中移除该文件
+      setFileList((preList) => preList.filter((item) => item.uid !== fileUid));
+
+      // 错误回调
+      message.error(errorObj.message || "文件上传失败");
+      antdOnError?.(errorObj);
+      onError?.(errorObj, fileObj);
+    }
+  };
+
+  const onCustomRequest = async (
+    fileUrlInfo: File,
+    customFileName: string,
+    currentRetry = 0,
+  ): Promise<string> => {
+    try {
+      const res = await generateOss();
+      const { policy, signature, accessid, host } = res.params;
+      const name = customFileName;
+
+      const formData = new FormData();
+      formData.append("policy", policy);
+      formData.append("signature", signature);
+      formData.append("OSSAccessKeyId", accessid);
+      formData.append("key", filePath + name);
+      formData.append("success_action_status", "200");
+      formData.append("file", fileUrlInfo);
+
+      const param = {
+        method: "POST",
+        body: formData,
+      };
+
+      const response = await fetch(host, param);
+
+      // 检查响应状态，如果不成功则抛出错误
+      if (!response.ok) {
+        let errorMessage = `上传失败: ${response.status} ${response.statusText}`;
+
+        // 尝试获取更详细的错误信息
+        try {
+          const errorText = await response.text();
+          if (errorText) {
+            errorMessage += ` - ${errorText}`;
+          }
+        } catch {
+          // 忽略解析错误响应体的错误
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const fileUrl = host + "/" + filePath + name;
+      return fileUrl;
+    } catch (error) {
+      console.log(error, "error");
+
+      // 如果还有重试次数，则重试
+      if (currentRetry < retryCount) {
+        console.log(`上传失败，正在重试 ${currentRetry + 1}/${retryCount}`);
+        return onCustomRequest(fileUrlInfo, customFileName, currentRetry + 1);
+      }
+
+      // 重试次数用完，抛出错误
+      throw new Error(
+        retryCount ? `上传失败，已重试${retryCount}次` : "上传失败",
+      );
+    }
+  };
+
+  const onChangeFn: UploadProps["onChange"] = (info) => {
+    // 不做任何处理，info需要被调用，否则会报错，但是不使用info
+    console.log(info, "onChange");
+  };
+
+  return (
+    <>
+      <Upload
+        {...props}
+        fileList={fileList}
+        beforeUpload={beforeUpload}
+        customRequest={handleCustomRequest}
+        onRemove={handleRemove}
+        onPreview={handlePreview}
+        onChange={onChangeFn}
+        progress={progress || {}}
+      >
+        {fileList.length < (props.maxCount || 1) &&
+          (children ? children : <PlusOutlined style={{ fontSize: 30 }} />)}
+      </Upload>
+
+      <Image
+        width={0}
+        height={0}
+        style={{ display: "none" }}
+        src={previewImage}
+        preview={{
+          visible: previewVisible,
+          onVisibleChange: (visible) => {
+            setPreviewVisible(visible);
+            if (!visible) {
+              setPreviewImage("");
+            }
+          },
+        }}
+      />
+    </>
+  );
+};
+
+export default OssFileUpload;
